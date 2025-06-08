@@ -37,6 +37,9 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Placeholder::make('info')
+                    ->content('**Nota:** Podrás agregar imágenes y atributos al producto después de crearlo, desde la pantalla de edición.')
+                    ->columnSpanFull(),
                 Forms\Components\TextInput::make('name')
                     ->label('Nombre')
                     ->required()
@@ -59,11 +62,13 @@ class ProductResource extends Resource
                     ->label('Categoría')
                     ->relationship('category', 'name')
                     ->searchable()
-                    ->required(),
+                    ->required()
+                    ->nullable(),
                 Forms\Components\Select::make('brand_id')
                     ->label('Marca')
                     ->relationship('brand', 'name')
-                    ->searchable(),
+                    ->searchable()
+                    ->nullable(),
                 Forms\Components\TextInput::make('price')
                     ->label('Precio')
                     ->required()
