@@ -1,0 +1,1 @@
+curl -o lang/es/validation.php https://raw.githubusercontent.com/Laravel-Lang/lang/main/locales/es/validation.php
