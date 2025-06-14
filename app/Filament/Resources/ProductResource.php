@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ProductResource\RelationManagers\ImagesRelationManager;
+use App\Filament\Resources\ProductResource\RelationManagers\ProductAttributesRelationManager;
 
 class ProductResource extends Resource
 {
@@ -202,6 +203,7 @@ class ProductResource extends Resource
     {
         return [
             ImagesRelationManager::class,
+            ProductAttributesRelationManager::class,
         ];
     }
 

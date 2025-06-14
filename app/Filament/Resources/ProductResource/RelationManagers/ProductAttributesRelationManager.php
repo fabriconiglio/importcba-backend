@@ -1,18 +1,17 @@
 <?php
 
-namespace App\Filament\Resources\ProductAttributesResource\RelationManagers;
+namespace App\Filament\Resources\ProductResource\RelationManagers;
 
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProductAttributesRelationManager extends RelationManager
 {
     protected static string $relationship = 'productAttributes';
+    protected static ?string $title = 'Atributos';
 
     public function form(Form $form): Form
     {
@@ -40,7 +39,10 @@ class ProductAttributesRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Crear atributo')
+                    ->modalHeading('Crear atributo')
+                    ->disableCreateAnother(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
