@@ -1,15 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\ProductResource\Pages;
+namespace App\Filament\Resources\OrderResource\Pages;
 
-use App\Filament\Resources\ProductResource;
+use App\Filament\Resources\OrderResource;
 use App\Filament\Pages\BaseCreateRecord;
 
-class CreateProduct extends BaseCreateRecord
+class CreateOrder extends BaseCreateRecord
 {
-    protected static string $resource = ProductResource::class;
-
-    protected static bool $canCreateAnother = false;
+    protected static string $resource = OrderResource::class;
 
     protected function getRedirectUrl(): string
     {
