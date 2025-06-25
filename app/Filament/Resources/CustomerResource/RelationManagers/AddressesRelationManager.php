@@ -15,6 +15,7 @@ class AddressesRelationManager extends RelationManager
     protected static string $relationship = 'addresses';
     protected static ?string $modelLabel = 'Dirección';
     protected static ?string $pluralModelLabel = 'Direcciones';
+    protected static ?string $title = 'Direcciones';
 
     public function form(Form $form): Form
     {
@@ -65,7 +66,9 @@ class AddressesRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Crear')
+                    ->createAnother(false),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
