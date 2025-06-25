@@ -61,6 +61,16 @@ class CustomerResource extends Resource
                     ->label('Fecha de Registro')
                     ->disabled()
                     ->visibleOn('edit'),
+                Forms\Components\Select::make('roles')
+                    ->label('Roles')
+                    ->multiple()
+                    ->relationship('roles', 'name')
+                    ->preload(),
+                Forms\Components\Select::make('permissions')
+                    ->label('Permisos')
+                    ->multiple()
+                    ->relationship('permissions', 'name')
+                    ->preload(),
             ]);
     }
 
