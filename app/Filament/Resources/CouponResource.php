@@ -69,7 +69,8 @@ class CouponResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('code')->label('Código')->searchable(),
-                Tables\Columns\TextColumn::make('type')->label('Tipo'),
+                Tables\Columns\TextColumn::make('type')->label('Tipo')
+                    ->formatStateUsing(fn($state) => $state === 'percentage' ? 'Porcentaje' : ($state === 'fixed_amount' ? 'Monto Fijo' : $state)),
                 Tables\Columns\TextColumn::make('value')->label('Valor')->money('ARS'),
                 Tables\Columns\TextColumn::make('usage_limit')->label('Límite Usos'),
                 Tables\Columns\TextColumn::make('used_count')->label('Usado'),
