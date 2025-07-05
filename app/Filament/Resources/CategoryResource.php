@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Str;
 
 class CategoryResource extends Resource
 {
@@ -31,7 +32,11 @@ class CategoryResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->label('Nombre')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $set('slug', Str::slug($state));
+                    }),
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
                     ->required()
@@ -43,26 +48,13 @@ class CategoryResource extends Resource
                     ->relationship('parent', 'name')
                     ->searchable()
                     ->nullable(),
-                Forms\Components\TextInput::make('image_url')
-                    ->label('URL de la imagen')
-                    ->maxLength(500)
-                    ->live(onBlur: true),
-                Forms\Components\Placeholder::make('image_preview')
-                    ->label('Vista previa de la imagen')
-                    ->content(function ($get) {
-                        $imageUrl = $get('image_url');
-                        if (empty($imageUrl)) {
-                            return new \Illuminate\Support\HtmlString('<p class="text-gray-500 text-sm">Ingresa una URL para ver la vista previa</p>');
-                        }
-                        return new \Illuminate\Support\HtmlString(
-                            '<div class="flex items-center space-x-4">'
-                            . '<img src="' . htmlspecialchars($imageUrl) . '" alt="Vista previa de la imagen" class="w-20 h-20 object-contain border border-gray-300 rounded-lg bg-white p-2" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';">'
-                            . '<div style="display: none;" class="w-20 h-20 border border-red-300 rounded-lg bg-red-50 flex items-center justify-center text-red-500 text-xs text-center">Error al cargar</div>'
-                            . '<div class="text-sm text-gray-600"><p class="font-medium">URL: ' . (strlen($imageUrl) > 50 ? substr($imageUrl, 0, 47) . '...' : $imageUrl) . '</p><p class="text-xs mt-1">Tamaño de vista previa: 80x80px</p></div>'
-                            . '</div>'
-                        );
-                    })
-                    ->visible(fn ($get) => !empty($get('image_url'))),
+                Forms\Components\FileUpload::make('image_url')
+                    ->label('Imagen')
+                    ->image()
+                    ->directory('categories')
+                    ->disk('public')
+                    ->visibility('public')
+                    ->maxSize(2048),
                 Forms\Components\Toggle::make('is_active')
                     ->label('Activo')
                     ->default(true),
@@ -82,6 +74,7 @@ class CategoryResource extends Resource
                 Tables\Columns\TextColumn::make('parent.name')->label('Categoría padre')->sortable(),
                 Tables\Columns\ImageColumn::make('image_url')
                     ->label('Imagen')
+                    ->disk('public')
                     ->height(40)
                     ->width(40)
                     ->defaultImageUrl('/images/no-image.png'),
