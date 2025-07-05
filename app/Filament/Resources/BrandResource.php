@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class BrandResource extends Resource
 {
@@ -32,7 +33,11 @@ class BrandResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->label('Nombre')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $set('slug', Str::slug($state));
+                    }),
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
                     ->required()
@@ -41,43 +46,13 @@ class BrandResource extends Resource
                     ->label('Descripción'),
                 
                 // Campo del logo con vista previa
-                Forms\Components\TextInput::make('logo_url')
-                    ->label('URL del logo')
-                    ->maxLength(500)
-                    ->live(onBlur: true),
-                
-                // Vista previa usando Placeholder
-                Forms\Components\Placeholder::make('logo_preview')
-                    ->label('Vista previa del logo')
-                    ->content(function ($get) {
-                        $logoUrl = $get('logo_url');
-                        
-                        if (empty($logoUrl)) {
-                            return new HtmlString('<p class="text-gray-500 text-sm">Ingresa una URL para ver la vista previa</p>');
-                        }
-                        
-                        return new HtmlString(
-                            '<div class="flex items-center space-x-4">
-                                <img 
-                                    src="' . htmlspecialchars($logoUrl) . '" 
-                                    alt="Vista previa del logo" 
-                                    class="w-20 h-20 object-contain border border-gray-300 rounded-lg bg-white p-2"
-                                    onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';"
-                                >
-                                <div 
-                                    style="display: none;" 
-                                    class="w-20 h-20 border border-red-300 rounded-lg bg-red-50 flex items-center justify-center text-red-500 text-xs text-center"
-                                >
-                                    Error al cargar
-                                </div>
-                                <div class="text-sm text-gray-600">
-                                    <p class="font-medium">URL: ' . (strlen($logoUrl) > 50 ? substr($logoUrl, 0, 47) . '...' : $logoUrl) . '</p>
-                                    <p class="text-xs mt-1">Tamaño de vista previa: 80x80px</p>
-                                </div>
-                            </div>'
-                        );
-                    })
-                    ->visible(fn ($get) => !empty($get('logo_url'))),
+                Forms\Components\FileUpload::make('logo_url')
+                    ->label('Logo')
+                    ->image()
+                    ->directory('brands')
+                    ->disk('public')
+                    ->visibility('public')
+                    ->maxSize(2048),
                 
                 Forms\Components\Toggle::make('is_active')
                     ->label('Activo')
@@ -95,6 +70,7 @@ class BrandResource extends Resource
                 // Mostrar imagen en la tabla
                 Tables\Columns\ImageColumn::make('logo_url')
                     ->label('Logo')
+                    ->disk('public')
                     ->height(40)
                     ->width(40)
                     ->defaultImageUrl('/images/no-image.png'),
