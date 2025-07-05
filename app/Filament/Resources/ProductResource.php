@@ -44,7 +44,11 @@ class ProductResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->label('Nombre')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $set('slug', \Illuminate\Support\Str::slug($state));
+                    }),
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
                     ->required()
