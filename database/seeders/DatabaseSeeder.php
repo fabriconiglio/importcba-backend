@@ -14,21 +14,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // User::factory()->create([
-        //     'first_name' => 'Test',
-        //     'last_name' => 'User',
-        //     'email' => 'test@example.com',
-        // ]);
-
-        User::factory()->create([
-            'first_name' => 'Admin',
-            'last_name' => 'Principal',
-            'email' => 'admin@megamix.com',
-            'password' => Hash::make('admin123'),
-            'role' => 'admin',
-            'is_active' => true,
+        // Crear roles y permisos
+        $this->call([
+            RolesAndPermissionsSeeder::class,
+            CategorySeeder::class,
+            BrandSeeder::class,
+            ProductSeeder::class,
         ]);
     }
 }

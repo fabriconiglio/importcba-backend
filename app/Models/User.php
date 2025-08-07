@@ -21,12 +21,10 @@ class User extends Authenticatable implements FilamentUser
      * @var list<string>
      */
     protected $fillable = [
-        'first_name',
-        'last_name',
+        'name',
         'email',
         'phone',
         'password',
-        'role',
         'is_active',
         'email_verified_at',
     ];
@@ -88,11 +86,7 @@ class User extends Authenticatable implements FilamentUser
      */
     public function getUserName(): string
     {
-        $firstName = $this->first_name ?? '';
-        $lastName = $this->last_name ?? '';
-        $fullName = trim($firstName . ' ' . $lastName);
-        
-        return !empty($fullName) ? $fullName : ($this->email ?? 'Usuario Sin Nombre');
+        return $this->name ?? $this->email ?? 'Usuario Sin Nombre';
     }
 
     /**
