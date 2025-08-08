@@ -12,10 +12,13 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('user_id')->nullable();
             $table->string('session_id', 255)->nullable(); // Para usuarios no registrados
+            $table->string('status')->default('active'); // active, completed, abandoned
+            $table->timestamp('expires_at')->nullable();
             $table->timestamps();
             
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->index(['user_id', 'session_id']);
+            $table->index(['status', 'expires_at']);
         });
     }
 

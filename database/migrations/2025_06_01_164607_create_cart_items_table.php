@@ -13,12 +13,14 @@ return new class extends Migration
             $table->uuid('cart_id');
             $table->uuid('product_id');
             $table->integer('quantity');
-            $table->decimal('unit_price', 10, 2);
+            $table->decimal('price', 10, 2);
+            $table->decimal('original_price', 10, 2)->nullable();
             $table->timestamps();
             
             $table->foreign('cart_id')->references('id')->on('carts')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->unique(['cart_id', 'product_id']);
+            $table->index(['cart_id', 'created_at']);
         });
     }
 
