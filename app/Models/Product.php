@@ -225,7 +225,9 @@ class Product extends Model
      */
     public function getPrimaryImageUrlAttribute(): ?string
     {
-        return $this->primaryImage?->image_url ?? '/images/placeholder-product.png';
+        return $this->primaryImage?->url
+            ?? $this->images()->orderBy('sort_order')->value('url')
+            ?? '/images/placeholder-product.png';
     }
 
     /**
@@ -233,7 +235,7 @@ class Product extends Model
      */
     public function getImageUrls(): array
     {
-        return $this->images->pluck('image_url')->toArray();
+        return $this->images->pluck('url')->toArray();
     }
 
     /**

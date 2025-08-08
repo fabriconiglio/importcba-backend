@@ -37,11 +37,55 @@ class ProductController extends Controller
                 $query->search($request->search);
             }
 
-            // Obtener productos directamente sin paginación por ahora
-            $products = $query->latest()->get();
+            // Filtros por precio efectivo (COALESCE(sale_price, price))
+            if ($request->filled('price_min')) {
+                $query->whereRaw('COALESCE(sale_price, price) >= ?', [(float) $request->price_min]);
+            }
 
-            // Transformar datos para el frontend
-            $transformedProducts = $products->map(function ($product) {
+            if ($request->filled('price_max')) {
+                $query->whereRaw('COALESCE(sale_price, price) <= ?', [(float) $request->price_max]);
+            }
+
+            // Filtro por stock
+            if ($request->has('in_stock')) {
+                $inStock = filter_var($request->in_stock, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                if ($inStock === true) {
+                    $query->inStock();
+                } elseif ($inStock === false) {
+                    $query->where('stock_quantity', '<=', 0);
+                }
+            }
+
+            // Ordenamiento
+            $sort = (string) $request->get('sort', 'newest');
+            switch ($sort) {
+                case 'price_asc':
+                    $query->orderByRaw('COALESCE(sale_price, price) ASC');
+                    break;
+                case 'price_desc':
+                    $query->orderByRaw('COALESCE(sale_price, price) DESC');
+                    break;
+                case 'name_asc':
+                    $query->orderBy('name', 'asc');
+                    break;
+                case 'name_desc':
+                    $query->orderBy('name', 'desc');
+                    break;
+                case 'oldest':
+                    $query->orderBy('created_at', 'asc');
+                    break;
+                case 'newest':
+                default:
+                    $query->orderBy('created_at', 'desc');
+                    break;
+            }
+
+            // Paginación
+            $perPage = (int) $request->get('per_page', 15);
+            $products = $query->paginate($perPage);
+
+            // Transformar datos para el frontend (sin serializar el paginador)
+            $products->getCollection()->transform(function ($product) {
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -74,9 +118,18 @@ class ProductController extends Controller
                 ];
             });
 
+            // Construir respuesta manual para evitar traducciones de enlaces
+            $payload = [
+                'data' => $products->getCollection()->values(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+            ];
+
             return response()->json([
                 'success' => true,
-                'data' => $transformedProducts,
+                'data' => $payload,
                 'message' => 'Productos obtenidos correctamente'
             ]);
 
