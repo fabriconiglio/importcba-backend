@@ -13,6 +13,7 @@ use App\Models\ShippingMethod;
 use App\Models\PaymentMethod;
 use App\Models\Coupon;
 use App\Services\StockReservationService;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -23,10 +24,12 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 class CheckoutController extends Controller
 {
     private StockReservationService $stockReservationService;
+    private EmailService $emailService;
 
-    public function __construct(StockReservationService $stockReservationService)
+    public function __construct(StockReservationService $stockReservationService, EmailService $emailService)
     {
         $this->stockReservationService = $stockReservationService;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -422,6 +425,9 @@ class CheckoutController extends Controller
                 $cart->items()->delete();
                 $cart->delete();
 
+                // Enviar email de confirmación (en cola para no bloquear la respuesta)
+                $this->emailService->queueOrderConfirmation($order);
+
                 return response()->json([
                     'success' => true,
                     'data' => [
@@ -438,9 +444,10 @@ class CheckoutController extends Controller
                             'tax_amount' => $order->tax_amount,
                             'discount_amount' => $order->discount_amount,
                             'total_amount' => $order->total_amount,
-                        ]
+                        ],
+                        'email_sent' => true
                     ],
-                    'message' => 'Pedido creado correctamente'
+                    'message' => 'Pedido creado correctamente. Se ha enviado un email de confirmación.'
                 ], 201);
 
             });

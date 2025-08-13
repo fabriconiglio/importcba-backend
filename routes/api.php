@@ -16,6 +16,7 @@ use App\Http\Controllers\API\CouponController;
 use App\Http\Controllers\API\AnonymousCartController;
 use App\Http\Controllers\API\CartMergeController;
 use App\Http\Controllers\API\StockReservationController;
+use App\Http\Controllers\API\EmailController;
 
 /*
 |--------------------------------------------------------------------------
@@ -193,6 +194,21 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('product/{productId}/reservations', [StockReservationController::class, 'getProductReservations']);
         Route::get('stats', [StockReservationController::class, 'getStats']);
         Route::post('clean-expired', [StockReservationController::class, 'cleanExpired']);
+    });
+    
+    // =============================================
+    // EMAILS
+    // =============================================
+    Route::prefix('emails')->group(function () {
+        Route::post('order/{orderId}/confirmation', [EmailController::class, 'sendOrderConfirmation']);
+        Route::post('order/{orderId}/confirmation/queue', [EmailController::class, 'queueOrderConfirmation']);
+        Route::post('password-reset', [EmailController::class, 'sendPasswordReset']);
+        Route::post('password-reset/queue', [EmailController::class, 'queuePasswordReset']);
+        Route::post('welcome/{userId}', [EmailController::class, 'sendWelcome']);
+        Route::post('welcome/{userId}/queue', [EmailController::class, 'queueWelcome']);
+        Route::get('check-configuration', [EmailController::class, 'checkConfiguration']);
+        Route::get('stats', [EmailController::class, 'getStats']);
+        Route::post('test', [EmailController::class, 'sendTestEmail']);
     });
     
     // =============================================
