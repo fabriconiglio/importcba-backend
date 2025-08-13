@@ -55,6 +55,8 @@ Route::prefix('v1')->group(function () {
     // MARCAS
     // =============================================
     Route::apiResource('brands', BrandController::class);
+    Route::get('brands/active/list', [BrandController::class, 'active']);
+    Route::get('brands/slug/{slug}', [BrandController::class, 'bySlug']);
     
     // =============================================
     // AUTENTICACIÓN
