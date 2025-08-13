@@ -13,6 +13,8 @@ use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\CouponController;
+use App\Http\Controllers\API\AnonymousCartController;
+use App\Http\Controllers\API\CartMergeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -149,6 +151,29 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::post('apply', [CouponController::class, 'apply']);
         Route::post('remove', [CouponController::class, 'remove']);
         Route::get('history', [CouponController::class, 'history']);
+    });
+    
+    // =============================================
+    // CARRITO ANÓNIMO
+    // =============================================
+    Route::prefix('anonymous-cart')->group(function () {
+        Route::get('/', [AnonymousCartController::class, 'index']);
+        Route::post('add', [AnonymousCartController::class, 'addItem']);
+        Route::put('items/{itemId}', [AnonymousCartController::class, 'updateItem']);
+        Route::delete('items/{itemId}', [AnonymousCartController::class, 'removeItem']);
+        Route::delete('clear', [AnonymousCartController::class, 'clear']);
+        Route::get('count', [AnonymousCartController::class, 'count']);
+        Route::get('total', [AnonymousCartController::class, 'total']);
+    });
+    
+    // =============================================
+    // MERGE DE CARRITO
+    // =============================================
+    Route::prefix('cart-merge')->group(function () {
+        Route::post('merge', [CartMergeController::class, 'merge']);
+        Route::get('anonymous-info', [CartMergeController::class, 'getAnonymousCartInfo']);
+        Route::get('stats', [CartMergeController::class, 'stats']);
+        Route::post('clean-expired', [CartMergeController::class, 'cleanExpired']);
     });
     
     // =============================================
