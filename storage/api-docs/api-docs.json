@@ -1,0 +1,1203 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Ecommerce API",
+        "description": "API completa para el sistema de ecommerce con autenticación, productos, carrito, pedidos, pagos, cupones y más.",
+        "contact": {
+            "name": "Soporte Técnico",
+            "email": "soporte@ecommerce.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://my-default-host.com",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/api/v1/docs": {
+            "get": {
+                "tags": [
+                    "Documentación"
+                ],
+                "summary": "Obtener documentación de la API",
+                "description": "Retorna información sobre la documentación de la API",
+                "operationId": "971d3e97de7c054f9615b559b88c9f89",
+                "responses": {
+                    "200": {
+                        "description": "Información de documentación obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Información de documentación obtenida"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "swagger_url": {
+                                                    "type": "string",
+                                                    "example": "/api/docs"
+                                                },
+                                                "json_url": {
+                                                    "type": "string",
+                                                    "example": "/docs/api-docs.json"
+                                                },
+                                                "version": {
+                                                    "type": "string",
+                                                    "example": "1.0.0"
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Ecommerce API Documentation"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "API completa para el sistema de ecommerce"
+                                                },
+                                                "endpoints": {
+                                                    "properties": {
+                                                        "authentication": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "products": {
+                                                            "type": "integer",
+                                                            "example": 8
+                                                        },
+                                                        "catalog": {
+                                                            "type": "integer",
+                                                            "example": 3
+                                                        },
+                                                        "cart": {
+                                                            "type": "integer",
+                                                            "example": 6
+                                                        },
+                                                        "orders": {
+                                                            "type": "integer",
+                                                            "example": 7
+                                                        },
+                                                        "payments": {
+                                                            "type": "integer",
+                                                            "example": 4
+                                                        },
+                                                        "coupons": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "emails": {
+                                                            "type": "integer",
+                                                            "example": 9
+                                                        },
+                                                        "stock": {
+                                                            "type": "integer",
+                                                            "example": 12
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/docs/health": {
+            "get": {
+                "tags": [
+                    "Documentación"
+                ],
+                "summary": "Verificar estado de la API",
+                "description": "Verifica el estado general de la API y sus servicios",
+                "operationId": "801472e1f23c2cc1b53d2c203171299e",
+                "responses": {
+                    "200": {
+                        "description": "Estado de la API verificado exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "API funcionando correctamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "healthy"
+                                                },
+                                                "timestamp": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "version": {
+                                                    "type": "string",
+                                                    "example": "1.0.0"
+                                                },
+                                                "environment": {
+                                                    "type": "string",
+                                                    "example": "local"
+                                                },
+                                                "services": {
+                                                    "properties": {
+                                                        "database": {
+                                                            "type": "string",
+                                                            "example": "connected"
+                                                        },
+                                                        "cache": {
+                                                            "type": "string",
+                                                            "example": "connected"
+                                                        },
+                                                        "queue": {
+                                                            "type": "string",
+                                                            "example": "connected"
+                                                        },
+                                                        "mail": {
+                                                            "type": "string",
+                                                            "example": "configured"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/docs/endpoints": {
+            "get": {
+                "tags": [
+                    "Documentación"
+                ],
+                "summary": "Listar endpoints disponibles",
+                "description": "Obtiene una lista de todos los endpoints disponibles en la API",
+                "operationId": "8c51cfacf29a86179cb1a97511cf6be0",
+                "responses": {
+                    "200": {
+                        "description": "Endpoints listados exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Endpoints listados exitosamente"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "method": {
+                                                        "type": "string",
+                                                        "example": "GET"
+                                                    },
+                                                    "path": {
+                                                        "type": "string",
+                                                        "example": "/api/v1/products"
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "products.index"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Listar productos"
+                                                    },
+                                                    "auth_required": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/products": {
+            "get": {
+                "tags": [
+                    "Productos"
+                ],
+                "summary": "Listar productos",
+                "description": "Obtiene una lista paginada de productos con filtros opcionales",
+                "operationId": "f79b302bb2c05f54f7b7576fd60d8e38",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Productos por página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "ID de categoría para filtrar",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "brand_id",
+                        "in": "query",
+                        "description": "ID de marca para filtrar",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Término de búsqueda",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "iPhone"
+                        }
+                    },
+                    {
+                        "name": "featured",
+                        "in": "query",
+                        "description": "Filtrar productos destacados",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Precio mínimo",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Precio máximo",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 1000
+                        }
+                    },
+                    {
+                        "name": "in_stock",
+                        "in": "query",
+                        "description": "Filtrar por disponibilidad de stock",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Ordenamiento",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "newest",
+                                "oldest",
+                                "price_asc",
+                                "price_desc",
+                                "name_asc",
+                                "name_desc"
+                            ],
+                            "example": "newest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de productos obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Productos obtenidos exitosamente"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Product"
+                                            }
+                                        },
+                                        "pagination": {
+                                            "$ref": "#/components/schemas/PaginationResponse"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Error en la solicitud",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/products/{id}": {
+            "get": {
+                "tags": [
+                    "Productos"
+                ],
+                "summary": "Obtener producto por ID",
+                "description": "Obtiene los detalles completos de un producto específico",
+                "operationId": "2ef3c74bd88192fb20f0adf142a82856",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID del producto",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Producto obtenido exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Producto obtenido exitosamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Product"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Producto no encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "SuccessResponse": {
+                "title": "Respuesta de Éxito",
+                "description": "Estructura estándar para respuestas exitosas",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Operación exitosa"
+                    },
+                    "data": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "ErrorResponse": {
+                "title": "Respuesta de Error",
+                "description": "Estructura estándar para respuestas de error",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Error en la operación"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "ValidationErrorResponse": {
+                "title": "Respuesta de Error de Validación",
+                "description": "Estructura para errores de validación",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Error de validación"
+                    },
+                    "errors": {
+                        "properties": {
+                            "field": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "example": "El campo es requerido"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "PaginationResponse": {
+                "title": "Respuesta Paginada",
+                "description": "Estructura para respuestas con paginación",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Datos obtenidos exitosamente"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "pagination": {
+                        "properties": {
+                            "current_page": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "last_page": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "per_page": {
+                                "type": "integer",
+                                "example": 15
+                            },
+                            "total": {
+                                "type": "integer",
+                                "example": 75
+                            },
+                            "from": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "to": {
+                                "type": "integer",
+                                "example": 15
+                            },
+                            "has_more_pages": {
+                                "type": "boolean",
+                                "example": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "User": {
+                "title": "Usuario",
+                "description": "Modelo de usuario",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Juan Pérez"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "juan@example.com"
+                    },
+                    "email_verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000000Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000000Z"
+                    }
+                },
+                "type": "object"
+            },
+            "Product": {
+                "title": "Producto",
+                "description": "Modelo de producto",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "iPhone 15 Pro"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "El último iPhone con características avanzadas"
+                    },
+                    "sku": {
+                        "type": "string",
+                        "example": "IPHONE15PRO-128"
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 999.99
+                    },
+                    "original_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 1099.99
+                    },
+                    "effective_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 999.99
+                    },
+                    "stock_quantity": {
+                        "type": "integer",
+                        "example": 50
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "iphone-15-pro"
+                    },
+                    "category_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "brand_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "category": {
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Electrónicos"
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "electronicos"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "brand": {
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Apple"
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "apple"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "Category": {
+                "title": "Categoría",
+                "description": "Modelo de categoría",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Electrónicos"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Productos electrónicos y tecnología"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "electronicos"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Brand": {
+                "title": "Marca",
+                "description": "Modelo de marca",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Apple"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Empresa líder en tecnología"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "apple"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Cart": {
+                "title": "Carrito",
+                "description": "Modelo de carrito de compras",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "session_id": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CartItem"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "CartItem": {
+                "title": "Item del Carrito",
+                "description": "Modelo de item del carrito",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "cart_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "product_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 999.99
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "product": {
+                        "$ref": "#/components/schemas/Product"
+                    }
+                },
+                "type": "object"
+            },
+            "Order": {
+                "title": "Pedido",
+                "description": "Modelo de pedido",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "order_number": {
+                        "type": "string",
+                        "example": "ORD-2024-001"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "pending"
+                    },
+                    "subtotal": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 1999.98
+                    },
+                    "shipping_cost": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 15
+                    },
+                    "tax_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 200
+                    },
+                    "discount_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 100
+                    },
+                    "total_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 2114.98
+                    },
+                    "coupon_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrderItem"
+                        }
+                    },
+                    "shipping_address": {
+                        "properties": {
+                            "street_address": {
+                                "type": "string"
+                            },
+                            "city": {
+                                "type": "string"
+                            },
+                            "state": {
+                                "type": "string"
+                            },
+                            "postal_code": {
+                                "type": "string"
+                            },
+                            "country": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "billing_address": {
+                        "properties": {
+                            "street_address": {
+                                "type": "string"
+                            },
+                            "city": {
+                                "type": "string"
+                            },
+                            "state": {
+                                "type": "string"
+                            },
+                            "postal_code": {
+                                "type": "string"
+                            },
+                            "country": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "OrderItem": {
+                "title": "Item del Pedido",
+                "description": "Modelo de item del pedido",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "order_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "product_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "product_name": {
+                        "type": "string",
+                        "example": "iPhone 15 Pro"
+                    },
+                    "product_sku": {
+                        "type": "string",
+                        "example": "IPHONE15PRO-128"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "unit_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 999.99
+                    },
+                    "total_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 1999.98
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Coupon": {
+                "title": "Cupón",
+                "description": "Modelo de cupón",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Descuento 10%"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "10% de descuento en toda la tienda"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "DESCUENTO10"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "percentage",
+                            "fixed_amount"
+                        ],
+                        "example": "percentage"
+                    },
+                    "value": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 10
+                    },
+                    "min_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 100
+                    },
+                    "max_uses": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "max_uses_per_user": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "PaymentMethod": {
+                "title": "Método de Pago",
+                "description": "Modelo de método de pago",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Tarjeta de Crédito"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "credit_card",
+                            "debit_card",
+                            "mercadopago",
+                            "paypal"
+                        ],
+                        "example": "credit_card"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "ShippingMethod": {
+                "title": "Método de Envío",
+                "description": "Modelo de método de envío",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Envío Estándar"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Entrega en 3-5 días hábiles"
+                    },
+                    "cost": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 15
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Productos",
+            "description": "Endpoints para gestión de productos"
+        },
+        {
+            "name": "Documentación",
+            "description": "Endpoints para gestión de documentación de la API"
+        }
+    ]
+}

@@ -2,17 +2,123 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-class ProductController extends Controller
+/**
+ * @OA\Tag(
+ *     name="Productos",
+ *     description="Endpoints para gestión de productos"
+ * )
+ */
+class ProductController extends BaseApiController
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/v1/products",
+     *     summary="Listar productos",
+     *     description="Obtiene una lista paginada de productos con filtros opcionales",
+     *     tags={"Productos"},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Productos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         description="ID de categoría para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Parameter(
+     *         name="brand_id",
+     *         in="query",
+     *         description="ID de marca para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Término de búsqueda",
+     *         required=false,
+     *         @OA\Schema(type="string", example="iPhone")
+     *     ),
+     *     @OA\Parameter(
+     *         name="featured",
+     *         in="query",
+     *         description="Filtrar productos destacados",
+     *         required=false,
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_min",
+     *         in="query",
+     *         description="Precio mínimo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=100.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_max",
+     *         in="query",
+     *         description="Precio máximo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=1000.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="in_stock",
+     *         in="query",
+     *         description="Filtrar por disponibilidad de stock",
+     *         required=false,
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Ordenamiento",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"newest", "oldest", "price_asc", "price_desc", "name_asc", "name_desc"},
+     *             example="newest"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Lista de productos obtenida exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Productos obtenidos exitosamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Product")
+     *             ),
+     *             @OA\Property(
+     *                 property="pagination",
+     *                 ref="#/components/schemas/PaginationResponse"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Error en la solicitud",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function index(Request $request): JsonResponse
     {
@@ -188,7 +294,33 @@ class ProductController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/v1/products/{id}",
+     *     summary="Obtener producto por ID",
+     *     description="Obtiene los detalles completos de un producto específico",
+     *     tags={"Productos"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID del producto",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Producto obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Producto obtenido exitosamente"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Product")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Producto no encontrado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function show(string $id): JsonResponse
     {

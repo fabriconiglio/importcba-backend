@@ -17,6 +17,7 @@ use App\Http\Controllers\API\AnonymousCartController;
 use App\Http\Controllers\API\CartMergeController;
 use App\Http\Controllers\API\StockReservationController;
 use App\Http\Controllers\API\EmailController;
+use App\Http\Controllers\API\DocumentationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -209,6 +210,15 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('check-configuration', [EmailController::class, 'checkConfiguration']);
         Route::get('stats', [EmailController::class, 'getStats']);
         Route::post('test', [EmailController::class, 'sendTestEmail']);
+    });
+    
+    // =============================================
+    // DOCUMENTACIÓN
+    // =============================================
+    Route::prefix('docs')->group(function () {
+        Route::get('/', [DocumentationController::class, 'index']);
+        Route::get('health', [DocumentationController::class, 'health']);
+        Route::get('endpoints', [DocumentationController::class, 'endpoints']);
     });
     
     // =============================================
