@@ -1,0 +1,591 @@
+<?php
+
+namespace App\Http\Controllers\API;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Product;
+use App\Models\Address;
+use App\Models\ShippingMethod;
+use App\Models\PaymentMethod;
+use App\Models\Coupon;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+class CheckoutController extends Controller
+{
+    /**
+     * Iniciar checkout - Obtener información inicial
+     */
+    public function initiate(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            
+            // Obtener carrito del usuario
+            $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
+            
+            if (!$cart || $cart->items->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El carrito está vacío'
+                ], 400);
+            }
+
+            // Verificar stock de todos los productos
+            $stockErrors = [];
+            foreach ($cart->items as $item) {
+                if ($item->product->stock_quantity < $item->quantity) {
+                    $stockErrors[] = "Producto '{$item->product->name}' - Stock insuficiente (disponible: {$item->product->stock_quantity}, solicitado: {$item->quantity})";
+                }
+            }
+
+            if (!empty($stockErrors)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de stock',
+                    'errors' => $stockErrors
+                ], 400);
+            }
+
+            // Obtener direcciones del usuario
+            $addresses = Address::where('user_id', $user->id)->get();
+
+            // Obtener métodos de envío activos
+            $shippingMethods = ShippingMethod::where('is_active', true)->get();
+
+            // Obtener métodos de pago activos
+            $paymentMethods = PaymentMethod::where('is_active', true)->get();
+
+            // Calcular totales
+            $subtotal = $cart->getTotal();
+            $shippingCost = 0;
+            $taxAmount = $this->calculateTax($subtotal);
+            $discountAmount = 0;
+            $totalAmount = $subtotal + $shippingCost + $taxAmount - $discountAmount;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'cart_summary' => [
+                        'total_items' => $cart->getTotalItems(),
+                        'subtotal' => $subtotal,
+                        'shipping_cost' => $shippingCost,
+                        'tax_amount' => $taxAmount,
+                        'discount_amount' => $discountAmount,
+                        'total_amount' => $totalAmount,
+                    ],
+                    'addresses' => $addresses,
+                    'shipping_methods' => $shippingMethods,
+                    'payment_methods' => $paymentMethods,
+                    'items' => $cart->items->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'product' => [
+                                'id' => $item->product->id,
+                                'name' => $item->product->name,
+                                'slug' => $item->product->slug,
+                                'image' => $item->product->primary_image_url,
+                                'stock_quantity' => $item->product->stock_quantity,
+                            ],
+                            'quantity' => $item->quantity,
+                            'price' => $item->price,
+                            'original_price' => $item->original_price,
+                            'subtotal' => $item->getSubtotal(),
+                            'has_discount' => $item->hasDiscount(),
+                            'discount_percentage' => $item->getDiscountPercentage(),
+                        ];
+                    }),
+                ],
+                'message' => 'Checkout iniciado correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al iniciar checkout: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Calcular envío y totales
+     */
+    public function calculate(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'shipping_method_id' => 'required|string|exists:shipping_methods,id',
+                'shipping_address' => 'required|array',
+                'shipping_address.street_address' => 'required|string',
+                'shipping_address.city' => 'required|string',
+                'shipping_address.state' => 'required|string',
+                'shipping_address.postal_code' => 'required|string',
+                'shipping_address.country' => 'required|string',
+                'billing_address' => 'nullable|array',
+                'billing_address.street_address' => 'required_with:billing_address|string',
+                'billing_address.city' => 'required_with:billing_address|string',
+                'billing_address.state' => 'required_with:billing_address|string',
+                'billing_address.postal_code' => 'required_with:billing_address|string',
+                'billing_address.country' => 'required_with:billing_address|string',
+                'coupon_code' => 'nullable|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+            $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
+
+            if (!$cart || $cart->items->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El carrito está vacío'
+                ], 400);
+            }
+
+            // Obtener método de envío
+            $shippingMethod = ShippingMethod::findOrFail($request->shipping_method_id);
+            $shippingCost = $shippingMethod->cost;
+
+            // Calcular subtotal
+            $subtotal = $cart->getTotal();
+
+            // Calcular impuestos
+            $taxAmount = $this->calculateTax($subtotal);
+
+            // Aplicar cupón si existe
+            $discountAmount = 0;
+            $coupon = null;
+            if ($request->filled('coupon_code')) {
+                $coupon = Coupon::where('code', $request->coupon_code)
+                    ->where('is_active', true)
+                    ->where('expires_at', '>', now())
+                    ->first();
+
+                if ($coupon) {
+                    // Verificar si el usuario ya usó este cupón
+                    $usageCount = $coupon->usages()->where('user_id', $user->id)->count();
+                    if ($usageCount >= $coupon->max_uses_per_user) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Ya has usado este cupón el máximo de veces permitido'
+                        ], 400);
+                    }
+
+                    // Verificar monto mínimo
+                    if ($subtotal < $coupon->minimum_amount) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "El monto mínimo para usar este cupón es $" . number_format($coupon->minimum_amount, 2)
+                        ], 400);
+                    }
+
+                    // Calcular descuento
+                    if ($coupon->discount_type === 'percentage') {
+                        $discountAmount = ($subtotal * $coupon->discount_value) / 100;
+                    } else {
+                        $discountAmount = $coupon->discount_value;
+                    }
+
+                    // No permitir descuento mayor al subtotal
+                    $discountAmount = min($discountAmount, $subtotal);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cupón no válido o expirado'
+                    ], 400);
+                }
+            }
+
+            // Calcular total
+            $totalAmount = $subtotal + $shippingCost + $taxAmount - $discountAmount;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'subtotal' => $subtotal,
+                    'shipping_cost' => $shippingCost,
+                    'tax_amount' => $taxAmount,
+                    'discount_amount' => $discountAmount,
+                    'total_amount' => $totalAmount,
+                    'shipping_method' => [
+                        'id' => $shippingMethod->id,
+                        'name' => $shippingMethod->name,
+                        'description' => $shippingMethod->description,
+                        'cost' => $shippingMethod->cost,
+                        'estimated_days' => $shippingMethod->estimated_days,
+                    ],
+                    'coupon' => $coupon ? [
+                        'id' => $coupon->id,
+                        'code' => $coupon->code,
+                        'discount_type' => $coupon->discount_type,
+                        'discount_value' => $coupon->discount_value,
+                        'discount_amount' => $discountAmount,
+                    ] : null,
+                    'breakdown' => [
+                        'items_total' => $subtotal,
+                        'shipping' => $shippingCost,
+                        'tax' => $taxAmount,
+                        'discount' => -$discountAmount,
+                        'total' => $totalAmount,
+                    ]
+                ],
+                'message' => 'Cálculo realizado correctamente'
+            ]);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Método de envío no encontrado'
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al calcular totales: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirmar y crear el pedido
+     */
+    public function confirm(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'shipping_method_id' => 'required|string|exists:shipping_methods,id',
+                'payment_method_id' => 'required|string|exists:payment_methods,id',
+                'shipping_address' => 'required|array',
+                'shipping_address.street_address' => 'required|string',
+                'shipping_address.city' => 'required|string',
+                'shipping_address.state' => 'required|string',
+                'shipping_address.postal_code' => 'required|string',
+                'shipping_address.country' => 'required|string',
+                'billing_address' => 'nullable|array',
+                'billing_address.street_address' => 'required_with:billing_address|string',
+                'billing_address.city' => 'required_with:billing_address|string',
+                'billing_address.state' => 'required_with:billing_address|string',
+                'billing_address.postal_code' => 'required_with:billing_address|string',
+                'billing_address.country' => 'required_with:billing_address|string',
+                'coupon_code' => 'nullable|string',
+                'notes' => 'nullable|string|max:500',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            return DB::transaction(function () use ($request, $user) {
+                // Obtener carrito
+                $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
+
+                if (!$cart || $cart->items->isEmpty()) {
+                    throw new \Exception('El carrito está vacío');
+                }
+
+                // Verificar stock nuevamente
+                foreach ($cart->items as $item) {
+                    if ($item->product->stock_quantity < $item->quantity) {
+                        throw new \Exception("Stock insuficiente para el producto '{$item->product->name}'");
+                    }
+                }
+
+                // Obtener método de envío
+                $shippingMethod = ShippingMethod::findOrFail($request->shipping_method_id);
+                $shippingCost = $shippingMethod->cost;
+
+                // Calcular totales
+                $subtotal = $cart->getTotal();
+                $taxAmount = $this->calculateTax($subtotal);
+                $discountAmount = 0;
+                $couponId = null;
+
+                // Aplicar cupón si existe
+                if ($request->filled('coupon_code')) {
+                    $coupon = Coupon::where('code', $request->coupon_code)
+                        ->where('is_active', true)
+                        ->where('expires_at', '>', now())
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($coupon) {
+                        // Verificar uso máximo
+                        $usageCount = $coupon->usages()->where('user_id', $user->id)->count();
+                        if ($usageCount >= $coupon->max_uses_per_user) {
+                            throw new \Exception('Ya has usado este cupón el máximo de veces permitido');
+                        }
+
+                        // Verificar monto mínimo
+                        if ($subtotal < $coupon->minimum_amount) {
+                            throw new \Exception("El monto mínimo para usar este cupón es $" . number_format($coupon->minimum_amount, 2));
+                        }
+
+                        // Calcular descuento
+                        if ($coupon->discount_type === 'percentage') {
+                            $discountAmount = ($subtotal * $coupon->discount_value) / 100;
+                        } else {
+                            $discountAmount = $coupon->discount_value;
+                        }
+
+                        $discountAmount = min($discountAmount, $subtotal);
+                        $couponId = $coupon->id;
+                    }
+                }
+
+                $totalAmount = $subtotal + $shippingCost + $taxAmount - $discountAmount;
+
+                // Crear el pedido
+                $order = Order::create([
+                    'order_number' => $this->generateOrderNumber(),
+                    'user_id' => $user->id,
+                    'status' => 'pending',
+                    'subtotal' => $subtotal,
+                    'tax_amount' => $taxAmount,
+                    'shipping_cost' => $shippingCost,
+                    'discount_amount' => $discountAmount,
+                    'total_amount' => $totalAmount,
+                    'currency' => 'USD',
+                    'payment_status' => 'pending',
+                    'payment_method' => $request->payment_method_id,
+                    'shipping_address' => $request->shipping_address,
+                    'billing_address' => $request->billing_address ?: $request->shipping_address,
+                    'notes' => $request->notes,
+                ]);
+
+                // Crear items del pedido
+                foreach ($cart->items as $item) {
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product->name,
+                        'product_sku' => $item->product->sku,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->price,
+                        'total_price' => $item->getSubtotal(),
+                    ]);
+
+                    // Actualizar stock del producto
+                    $item->product->decrement('stock_quantity', $item->quantity);
+                }
+
+                // Registrar uso del cupón si existe
+                if ($couponId) {
+                    $coupon->usages()->create([
+                        'user_id' => $user->id,
+                        'order_id' => $order->id,
+                        'discount_amount' => $discountAmount,
+                    ]);
+                }
+
+                // Limpiar carrito
+                $cart->items()->delete();
+                $cart->delete();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'order' => [
+                            'id' => $order->id,
+                            'order_number' => $order->order_number,
+                            'status' => $order->status,
+                            'total_amount' => $order->total_amount,
+                            'created_at' => $order->created_at->toISOString(),
+                        ],
+                        'summary' => [
+                            'subtotal' => $order->subtotal,
+                            'shipping_cost' => $order->shipping_cost,
+                            'tax_amount' => $order->tax_amount,
+                            'discount_amount' => $order->discount_amount,
+                            'total_amount' => $order->total_amount,
+                        ]
+                    ],
+                    'message' => 'Pedido creado correctamente'
+                ], 201);
+
+            });
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al confirmar pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener métodos de envío disponibles
+     */
+    public function shippingMethods(): JsonResponse
+    {
+        try {
+            $shippingMethods = ShippingMethod::where('is_active', true)->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $shippingMethods,
+                'message' => 'Métodos de envío obtenidos correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener métodos de envío: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener métodos de pago disponibles
+     */
+    public function paymentMethods(): JsonResponse
+    {
+        try {
+            $paymentMethods = PaymentMethod::where('is_active', true)->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $paymentMethods,
+                'message' => 'Métodos de pago obtenidos correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener métodos de pago: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Validar cupón
+     */
+    public function validateCoupon(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'coupon_code' => 'required|string',
+                'subtotal' => 'required|numeric|min:0',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+            $coupon = Coupon::where('code', $request->coupon_code)
+                ->where('is_active', true)
+                ->where('expires_at', '>', now())
+                ->first();
+
+            if (!$coupon) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cupón no válido o expirado'
+                ], 400);
+            }
+
+            // Verificar uso máximo por usuario
+            $usageCount = $coupon->usages()->where('user_id', $user->id)->count();
+            if ($usageCount >= $coupon->max_uses_per_user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya has usado este cupón el máximo de veces permitido'
+                ], 400);
+            }
+
+            // Verificar monto mínimo
+            if ($request->subtotal < $coupon->minimum_amount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "El monto mínimo para usar este cupón es $" . number_format($coupon->minimum_amount, 2)
+                ], 400);
+            }
+
+            // Calcular descuento
+            $subtotal = $request->subtotal;
+            if ($coupon->discount_type === 'percentage') {
+                $discountAmount = ($subtotal * $coupon->discount_value) / 100;
+            } else {
+                $discountAmount = $coupon->discount_value;
+            }
+
+            $discountAmount = min($discountAmount, $subtotal);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'coupon' => [
+                        'id' => $coupon->id,
+                        'code' => $coupon->code,
+                        'name' => $coupon->name,
+                        'description' => $coupon->description,
+                        'discount_type' => $coupon->discount_type,
+                        'discount_value' => $coupon->discount_value,
+                        'discount_amount' => $discountAmount,
+                        'minimum_amount' => $coupon->minimum_amount,
+                    ]
+                ],
+                'message' => 'Cupón válido'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al validar cupón: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Calcular impuestos (método simplificado)
+     */
+    private function calculateTax(float $subtotal): float
+    {
+        // Implementación simplificada - 10% de impuestos
+        // En producción, esto debería integrarse con un servicio de cálculo de impuestos
+        return $subtotal * 0.10;
+    }
+
+    /**
+     * Generar número de pedido único
+     */
+    private function generateOrderNumber(): string
+    {
+        $prefix = 'ORD';
+        $timestamp = now()->format('Ymd');
+        $random = strtoupper(substr(md5(uniqid()), 0, 6));
+        
+        return "{$prefix}-{$timestamp}-{$random}";
+    }
+}

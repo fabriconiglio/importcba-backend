@@ -9,6 +9,8 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\ProductImageController;
 use App\Http\Controllers\API\CatalogController;
+use App\Http\Controllers\API\CheckoutController;
+use App\Http\Controllers\API\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,9 +107,23 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     });
     
     // =============================================
-    // PEDIDOS (para futuro)
+    // CHECKOUT
     // =============================================
-    // Route::apiResource('orders', OrderController::class);
+    Route::prefix('checkout')->group(function () {
+        Route::get('initiate', [CheckoutController::class, 'initiate']);
+        Route::post('calculate', [CheckoutController::class, 'calculate']);
+        Route::post('confirm', [CheckoutController::class, 'confirm']);
+        Route::get('shipping-methods', [CheckoutController::class, 'shippingMethods']);
+        Route::get('payment-methods', [CheckoutController::class, 'paymentMethods']);
+        Route::post('validate-coupon', [CheckoutController::class, 'validateCoupon']);
+    });
+    
+    // =============================================
+    // PEDIDOS
+    // =============================================
+    Route::apiResource('orders', OrderController::class);
+    Route::get('orders/status/{status}', [OrderController::class, 'byStatus']);
+    Route::get('orders/stats', [OrderController::class, 'stats']);
     
     // =============================================
     // FAVORITOS (para futuro)
