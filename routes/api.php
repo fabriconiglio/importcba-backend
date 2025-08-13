@@ -8,6 +8,7 @@ use App\Http\Controllers\API\BrandController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\ProductImageController;
+use App\Http\Controllers\API\CatalogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,6 +37,15 @@ Route::prefix('v1')->group(function () {
     // Rutas adicionales para productos
     Route::get('products/category/{categorySlug}', [ProductController::class, 'byCategory']);
     Route::get('products/featured/list', [ProductController::class, 'featured']);
+
+    // =============================================
+    // CATÁLOGO SEO-FRIENDLY
+    // =============================================
+    Route::prefix('catalog')->group(function () {
+        Route::get('category/{categorySlug}', [CatalogController::class, 'byCategory']);
+        Route::get('brand/{brandSlug}', [CatalogController::class, 'byBrand']);
+        Route::get('category/{categorySlug}/brand/{brandSlug}', [CatalogController::class, 'byCategoryAndBrand']);
+    });
 
     // Rutas para imágenes de productos
     Route::prefix('products/{productId}/images')->group(function () {
