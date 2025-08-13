@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -13,10 +12,63 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password as PasswordRules;
 
-class AuthController extends Controller
+/**
+ * @OA\Tag(
+ *     name="Autenticación",
+ *     description="Endpoints para registro, login y gestión de usuarios"
+ * )
+ */
+class AuthController extends BaseApiController
 {
     /**
-     * Registrar un nuevo usuario
+     * @OA\Post(
+     *     path="/api/v1/auth/register",
+     *     summary="Registrar nuevo usuario",
+     *     description="Crea una nueva cuenta de usuario y retorna un token de autenticación",
+     *     tags={"Autenticación"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password","password_confirmation"},
+     *             @OA\Property(property="name", type="string", example="Juan Pérez", description="Nombre completo del usuario"),
+     *             @OA\Property(property="email", type="string", format="email", example="juan@example.com", description="Email del usuario"),
+     *             @OA\Property(property="password", type="string", example="password123", description="Contraseña"),
+     *             @OA\Property(property="password_confirmation", type="string", example="password123", description="Confirmación de contraseña"),
+     *             @OA\Property(property="phone", type="string", example="+5491112345678", description="Teléfono (opcional)")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Usuario registrado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="¡Usuario registrado correctamente!"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="user",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Juan Pérez"),
+     *                     @OA\Property(property="email", type="string", example="juan@example.com"),
+     *                     @OA\Property(property="phone", type="string", example="+5491112345678")
+     *                 ),
+     *                 @OA\Property(property="token", type="string", example="1|abc123...")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function register(Request $request): JsonResponse
     {
@@ -72,7 +124,51 @@ class AuthController extends Controller
     }
 
     /**
-     * Login de usuario
+     * @OA\Post(
+     *     path="/api/v1/auth/login",
+     *     summary="Iniciar sesión",
+     *     description="Autentica un usuario y retorna un token de acceso",
+     *     tags={"Autenticación"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="juan@example.com", description="Email del usuario"),
+     *             @OA\Property(property="password", type="string", example="password123", description="Contraseña")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login exitoso",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="¡Login exitoso!"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="user",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Juan Pérez"),
+     *                     @OA\Property(property="email", type="string", example="juan@example.com"),
+     *                     @OA\Property(property="phone", type="string", example="+5491112345678")
+     *                 ),
+     *                 @OA\Property(property="token", type="string", example="1|abc123...")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Credenciales inválidas",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function login(Request $request): JsonResponse
     {
@@ -132,7 +228,37 @@ class AuthController extends Controller
     }
 
     /**
-     * Obtener información del usuario autenticado
+     * @OA\Get(
+     *     path="/api/v1/auth/me",
+     *     summary="Obtener perfil del usuario",
+     *     description="Retorna la información del usuario autenticado",
+     *     tags={"Autenticación"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Perfil obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="user",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Juan Pérez"),
+     *                     @OA\Property(property="email", type="string", example="juan@example.com"),
+     *                     @OA\Property(property="phone", type="string", example="+5491112345678")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function me(Request $request): JsonResponse
     {

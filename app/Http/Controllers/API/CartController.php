@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -11,10 +10,73 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
-class CartController extends Controller
+/**
+ * @OA\Tag(
+ *     name="Carrito",
+ *     description="Endpoints para gestión del carrito de compras"
+ * )
+ */
+class CartController extends BaseApiController
 {
     /**
-     * Obtener el carrito del usuario actual
+     * @OA\Get(
+     *     path="/api/v1/cart",
+     *     summary="Obtener carrito del usuario",
+     *     description="Retorna el carrito de compras del usuario autenticado con todos sus items",
+     *     tags={"Carrito"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Carrito obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Carrito obtenido correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", format="uuid"),
+     *                 @OA\Property(
+     *                     property="items",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="string", format="uuid"),
+     *                         @OA\Property(
+     *                             property="product",
+     *                             type="object",
+     *                             @OA\Property(property="id", type="string", format="uuid"),
+     *                             @OA\Property(property="name", type="string", example="iPhone 15 Pro"),
+     *                             @OA\Property(property="slug", type="string", example="iphone-15-pro"),
+     *                             @OA\Property(property="image", type="string", example="https://example.com/image.jpg"),
+     *                             @OA\Property(property="category", type="string", example="Electrónicos"),
+     *                             @OA\Property(property="brand", type="string", example="Apple")
+     *                         ),
+     *                         @OA\Property(property="quantity", type="integer", example=2),
+     *                         @OA\Property(property="price", type="number", format="float", example=999.99),
+     *                         @OA\Property(property="original_price", type="number", format="float", example=1099.99),
+     *                         @OA\Property(property="subtotal", type="number", format="float", example=1999.98),
+     *                         @OA\Property(property="savings", type="number", format="float", example=200.00),
+     *                         @OA\Property(property="has_discount", type="boolean", example=true),
+     *                         @OA\Property(property="discount_percentage", type="number", format="float", example=18.18)
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="total_items", type="integer", example=5),
+     *                 @OA\Property(property="total", type="number", format="float", example=4999.95),
+     *                 @OA\Property(property="total_savings", type="number", format="float", example=500.00)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function index(Request $request): JsonResponse
     {
@@ -68,7 +130,53 @@ class CartController extends Controller
     }
 
     /**
-     * Agregar item al carrito
+     * @OA\Post(
+     *     path="/api/v1/cart/add",
+     *     summary="Agregar producto al carrito",
+     *     description="Agrega un producto al carrito del usuario autenticado",
+     *     tags={"Carrito"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product_id","quantity"},
+     *             @OA\Property(property="product_id", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000", description="ID del producto"),
+     *             @OA\Property(property="quantity", type="integer", example=2, description="Cantidad a agregar")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Producto agregado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Producto agregado al carrito"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="cart_item",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="quantity", type="integer", example=2),
+     *                     @OA\Property(property="price", type="number", format="float", example=999.99),
+     *                     @OA\Property(property="subtotal", type="number", format="float", example=1999.98)
+     *                 ),
+     *                 @OA\Property(property="cart_total", type="number", format="float", example=4999.95),
+     *                 @OA\Property(property="cart_items", type="integer", example=5)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function addItem(Request $request): JsonResponse
     {

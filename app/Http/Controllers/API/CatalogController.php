@@ -11,11 +11,108 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
+/**
+ * @OA\Tag(
+ *     name="Catálogo",
+ *     description="Endpoints para búsqueda y filtrado de productos"
+ * )
+ */
 class CatalogController extends Controller
 {
     /**
-     * Get products by category slug (SEO-friendly)
-     * URL: /api/v1/catalog/category/{categorySlug}
+     * @OA\Get(
+     *     path="/api/v1/catalog/category/{slug}",
+     *     summary="Productos por categoría",
+     *     description="Obtiene productos filtrados por slug de categoría con opciones de búsqueda y ordenamiento",
+     *     tags={"Catálogo"},
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         description="Slug de la categoría",
+     *         required=true,
+     *         @OA\Schema(type="string", example="electronicos")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Productos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="brand_id",
+     *         in="query",
+     *         description="ID de marca para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_min",
+     *         in="query",
+     *         description="Precio mínimo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=100.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_max",
+     *         in="query",
+     *         description="Precio máximo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=1000.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Ordenamiento",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"newest", "oldest", "price_asc", "price_desc", "name_asc", "name_desc"},
+     *             example="newest"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Productos obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Productos obtenidos exitosamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="category",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Electrónicos"),
+     *                     @OA\Property(property="slug", type="string", example="electronicos"),
+     *                     @OA\Property(property="description", type="string", example="Productos electrónicos y tecnología")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="products",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Product")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="pagination",
+     *                     ref="#/components/schemas/PaginationResponse"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Categoría no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function byCategory(string $categorySlug, Request $request): JsonResponse
     {
@@ -86,8 +183,99 @@ class CatalogController extends Controller
     }
 
     /**
-     * Get products by brand slug (SEO-friendly)
-     * URL: /api/v1/catalog/brand/{brandSlug}
+     * @OA\Get(
+     *     path="/api/v1/catalog/brand/{slug}",
+     *     summary="Productos por marca",
+     *     description="Obtiene productos filtrados por slug de marca con opciones de búsqueda y ordenamiento",
+     *     tags={"Catálogo"},
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         description="Slug de la marca",
+     *         required=true,
+     *         @OA\Schema(type="string", example="apple")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Productos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         description="ID de categoría para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_min",
+     *         in="query",
+     *         description="Precio mínimo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=100.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_max",
+     *         in="query",
+     *         description="Precio máximo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=1000.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Ordenamiento",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"newest", "oldest", "price_asc", "price_desc", "name_asc", "name_desc"},
+     *             example="newest"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Productos obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Productos obtenidos exitosamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="brand",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Apple"),
+     *                     @OA\Property(property="slug", type="string", example="apple"),
+     *                     @OA\Property(property="description", type="string", example="Empresa líder en tecnología")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="products",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Product")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="pagination",
+     *                     ref="#/components/schemas/PaginationResponse"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Marca no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function byBrand(string $brandSlug, Request $request): JsonResponse
     {
@@ -158,8 +346,121 @@ class CatalogController extends Controller
     }
 
     /**
-     * Get products by category and brand (SEO-friendly)
-     * URL: /api/v1/catalog/category/{categorySlug}/brand/{brandSlug}
+     * @OA\Get(
+     *     path="/api/v1/catalog/category/{categorySlug}/brand/{brandSlug}",
+     *     summary="Productos por categoría y marca",
+     *     description="Obtiene productos filtrados por slug de categoría y marca con opciones de búsqueda y ordenamiento",
+     *     tags={"Catálogo"},
+     *     @OA\Parameter(
+     *         name="categorySlug",
+     *         in="path",
+     *         description="Slug de la categoría",
+     *         required=true,
+     *         @OA\Schema(type="string", example="electronicos")
+     *     ),
+     *     @OA\Parameter(
+     *         name="brandSlug",
+     *         in="path",
+     *         description="Slug de la marca",
+     *         required=true,
+     *         @OA\Schema(type="string", example="apple")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Productos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         description="ID de categoría para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Parameter(
+     *         name="brand_id",
+     *         in="query",
+     *         description="ID de marca para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_min",
+     *         in="query",
+     *         description="Precio mínimo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=100.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_max",
+     *         in="query",
+     *         description="Precio máximo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=1000.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Ordenamiento",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"newest", "oldest", "price_asc", "price_desc", "name_asc", "name_desc"},
+     *             example="newest"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Productos obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Productos obtenidos exitosamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="category",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Electrónicos"),
+     *                     @OA\Property(property="slug", type="string", example="electronicos"),
+     *                     @OA\Property(property="description", type="string", example="Productos electrónicos y tecnología")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="brand",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Apple"),
+     *                     @OA\Property(property="slug", type="string", example="apple"),
+     *                     @OA\Property(property="description", type="string", example="Empresa líder en tecnología")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="products",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Product")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="pagination",
+     *                     ref="#/components/schemas/PaginationResponse"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Categoría o marca no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function byCategoryAndBrand(string $categorySlug, string $brandSlug, Request $request): JsonResponse
     {
