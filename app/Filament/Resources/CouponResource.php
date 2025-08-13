@@ -34,6 +34,15 @@ class CouponResource extends Resource
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(50),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nombre')
+                    ->required()
+                    ->maxLength(255)
+                    ->placeholder('Ej: Descuento 10%'),
+                Forms\Components\Textarea::make('description')
+                    ->label('Descripción')
+                    ->rows(3)
+                    ->placeholder('Ej: 10% de descuento en toda la compra'),
                 Forms\Components\Select::make('type')
                     ->label('Tipo')
                     ->options([
@@ -69,6 +78,8 @@ class CouponResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('code')->label('Código')->searchable(),
+                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->limit(30),
+                Tables\Columns\TextColumn::make('description')->label('Descripción')->limit(50)->wrap(),
                 Tables\Columns\TextColumn::make('type')->label('Tipo')
                     ->formatStateUsing(fn($state) => $state === 'percentage' ? 'Porcentaje' : ($state === 'fixed_amount' ? 'Monto Fijo' : $state)),
                 Tables\Columns\TextColumn::make('value')->label('Valor')->money('ARS'),
