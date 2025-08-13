@@ -11,6 +11,7 @@ use App\Http\Controllers\API\ProductImageController;
 use App\Http\Controllers\API\CatalogController;
 use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\OrderController;
+use App\Http\Controllers\API\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -124,6 +125,19 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::apiResource('orders', OrderController::class);
     Route::get('orders/status/{status}', [OrderController::class, 'byStatus']);
     Route::get('orders/stats', [OrderController::class, 'stats']);
+    
+    // =============================================
+    // PAGOS
+    // =============================================
+    Route::prefix('payments')->group(function () {
+        Route::post('process', [PaymentController::class, 'processPayment']);
+        Route::get('info/{paymentId}', [PaymentController::class, 'getPaymentInfo']);
+        Route::post('refund/{paymentId}', [PaymentController::class, 'refundPayment']);
+        Route::post('create-method', [PaymentController::class, 'createPaymentMethod']);
+        Route::get('providers', [PaymentController::class, 'getProviders']);
+        Route::post('validate', [PaymentController::class, 'validatePaymentData']);
+        Route::get('providers/{providerName}/methods', [PaymentController::class, 'getSupportedMethods']);
+    });
     
     // =============================================
     // FAVORITOS (para futuro)
