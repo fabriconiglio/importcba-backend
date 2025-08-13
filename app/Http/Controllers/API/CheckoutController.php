@@ -12,6 +12,7 @@ use App\Models\Address;
 use App\Models\ShippingMethod;
 use App\Models\PaymentMethod;
 use App\Models\Coupon;
+use App\Services\StockReservationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,13 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CheckoutController extends Controller
 {
+    private StockReservationService $stockReservationService;
+
+    public function __construct(StockReservationService $stockReservationService)
+    {
+        $this->stockReservationService = $stockReservationService;
+    }
+
     /**
      * Iniciar checkout - Obtener información inicial
      */
@@ -39,11 +47,12 @@ class CheckoutController extends Controller
                 ], 400);
             }
 
-            // Verificar stock de todos los productos
+            // Verificar stock disponible considerando reservas
             $stockErrors = [];
             foreach ($cart->items as $item) {
-                if ($item->product->stock_quantity < $item->quantity) {
-                    $stockErrors[] = "Producto '{$item->product->name}' - Stock insuficiente (disponible: {$item->product->stock_quantity}, solicitado: {$item->quantity})";
+                $availableStock = $this->stockReservationService->getAvailableStock($item->product->id);
+                if ($availableStock < $item->quantity) {
+                    $stockErrors[] = "Producto '{$item->product->name}' - Stock insuficiente (disponible: {$availableStock}, solicitado: {$item->quantity})";
                 }
             }
 
@@ -303,10 +312,11 @@ class CheckoutController extends Controller
                     throw new \Exception('El carrito está vacío');
                 }
 
-                // Verificar stock nuevamente
+                // Verificar stock disponible considerando reservas
                 foreach ($cart->items as $item) {
-                    if ($item->product->stock_quantity < $item->quantity) {
-                        throw new \Exception("Stock insuficiente para el producto '{$item->product->name}'");
+                    $availableStock = $this->stockReservationService->getAvailableStock($item->product->id);
+                    if ($availableStock < $item->quantity) {
+                        throw new \Exception("Stock insuficiente para el producto '{$item->product->name}' (disponible: {$availableStock}, solicitado: {$item->quantity})");
                     }
                 }
 
@@ -372,7 +382,7 @@ class CheckoutController extends Controller
                     'notes' => $request->notes,
                 ]);
 
-                // Crear items del pedido
+                // Crear items del pedido y reservar stock
                 foreach ($cart->items as $item) {
                     OrderItem::create([
                         'order_id' => $order->id,
@@ -384,8 +394,19 @@ class CheckoutController extends Controller
                         'total_price' => $item->getSubtotal(),
                     ]);
 
-                    // Actualizar stock del producto
-                    $item->product->decrement('stock_quantity', $item->quantity);
+                    // Crear reserva de stock para el pedido
+                    $this->stockReservationService->createReservation(
+                        $item->product_id,
+                        $item->quantity,
+                        $order->id,
+                        $user->id,
+                        null,
+                        30, // 30 minutos de expiración
+                        [
+                            'order_item_id' => $item->id,
+                            'price' => $item->price,
+                        ]
+                    );
                 }
 
                 // Registrar uso del cupón si existe

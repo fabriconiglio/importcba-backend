@@ -15,6 +15,7 @@ use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\CouponController;
 use App\Http\Controllers\API\AnonymousCartController;
 use App\Http\Controllers\API\CartMergeController;
+use App\Http\Controllers\API\StockReservationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -174,6 +175,24 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('anonymous-info', [CartMergeController::class, 'getAnonymousCartInfo']);
         Route::get('stats', [CartMergeController::class, 'stats']);
         Route::post('clean-expired', [CartMergeController::class, 'cleanExpired']);
+    });
+    
+    // =============================================
+    // RESERVAS DE STOCK
+    // =============================================
+    Route::prefix('stock-reservations')->group(function () {
+        Route::post('/', [StockReservationController::class, 'create']);
+        Route::post('{reservationId}/confirm', [StockReservationController::class, 'confirm']);
+        Route::post('{reservationId}/cancel', [StockReservationController::class, 'cancel']);
+        Route::post('{reservationId}/extend', [StockReservationController::class, 'extendExpiration']);
+        Route::post('order/{orderId}/reserve', [StockReservationController::class, 'reserveForOrder']);
+        Route::post('order/{orderId}/confirm', [StockReservationController::class, 'confirmOrderReservations']);
+        Route::post('order/{orderId}/cancel', [StockReservationController::class, 'cancelOrderReservations']);
+        Route::get('product/{productId}/available', [StockReservationController::class, 'getAvailableStock']);
+        Route::post('check-availability', [StockReservationController::class, 'checkAvailability']);
+        Route::get('product/{productId}/reservations', [StockReservationController::class, 'getProductReservations']);
+        Route::get('stats', [StockReservationController::class, 'getStats']);
+        Route::post('clean-expired', [StockReservationController::class, 'cleanExpired']);
     });
     
     // =============================================
