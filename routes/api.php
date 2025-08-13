@@ -12,6 +12,7 @@ use App\Http\Controllers\API\CatalogController;
 use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\PaymentController;
+use App\Http\Controllers\API\CouponController;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +138,17 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('providers', [PaymentController::class, 'getProviders']);
         Route::post('validate', [PaymentController::class, 'validatePaymentData']);
         Route::get('providers/{providerName}/methods', [PaymentController::class, 'getSupportedMethods']);
+    });
+    
+    // =============================================
+    // CUPONES
+    // =============================================
+    Route::prefix('coupons')->group(function () {
+        Route::get('/', [CouponController::class, 'index']);
+        Route::post('validate', [CouponController::class, 'validate']);
+        Route::post('apply', [CouponController::class, 'apply']);
+        Route::post('remove', [CouponController::class, 'remove']);
+        Route::get('history', [CouponController::class, 'history']);
     });
     
     // =============================================

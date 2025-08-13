@@ -37,6 +37,7 @@ class Order extends Model
         'shipping_address',
         'billing_address',
         'notes',
+        'coupon_id',
     ];
 
     protected $casts = [
@@ -52,5 +53,10 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 }
