@@ -9,10 +9,101 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
+/**
+ * @OA\Tag(
+ *     name="Orders",
+ *     description="Endpoints para gestión de pedidos del usuario"
+ * )
+ */
 class OrderController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/v1/orders",
+     *     summary="Listar pedidos del usuario",
+     *     description="Obtiene una lista paginada de todos los pedidos del usuario autenticado",
+     *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Elementos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Pedidos obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Pedidos obtenidos correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="data", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="order_number", type="string", example="ORD-2024-001"),
+     *                     @OA\Property(property="status", type="string", example="pending"),
+     *                     @OA\Property(property="payment_status", type="string", example="pending"),
+     *                     @OA\Property(property="total_amount", type="number", format="float", example=2999.97),
+     *                     @OA\Property(property="currency", type="string", example="USD"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="items_count", type="integer", example=3),
+     *                     @OA\Property(
+     *                         property="items",
+     *                         type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="id", type="string", format="uuid"),
+     *                             @OA\Property(property="product_name", type="string", example="iPhone 15 Pro"),
+     *                             @OA\Property(property="product_sku", type="string", example="IPHONE15PRO-128"),
+     *                             @OA\Property(property="quantity", type="integer", example=2),
+     *                             @OA\Property(property="unit_price", type="number", format="float", example=999.99),
+     *                             @OA\Property(property="total_price", type="number", format="float", example=1999.98),
+     *                             @OA\Property(
+     *                                 property="product",
+     *                                 type="object",
+     *                                 @OA\Property(property="id", type="string", format="uuid"),
+     *                                 @OA\Property(property="name", type="string", example="iPhone 15 Pro"),
+     *                                 @OA\Property(property="slug", type="string", example="iphone-15-pro"),
+     *                                 @OA\Property(property="image", type="string", example="https://example.com/image.jpg")
+     *                             )
+     *                         )
+     *                     )
+     *                 )),
+     *                 @OA\Property(property="first_page_url", type="string"),
+     *                 @OA\Property(property="from", type="integer", example=1),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="last_page_url", type="string"),
+     *                 @OA\Property(property="next_page_url", type="string", nullable=true),
+     *                 @OA\Property(property="path", type="string"),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="prev_page_url", type="string", nullable=true),
+     *                 @OA\Property(property="to", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=50)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function index(Request $request): JsonResponse
     {
@@ -68,7 +159,21 @@ class OrderController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *     path="/api/v1/orders",
+     *     summary="Crear pedido (No permitido)",
+     *     description="Este endpoint no está disponible. Use el endpoint de checkout para crear pedidos",
+     *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=405,
+     *         description="Método no permitido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Use el endpoint de checkout para crear pedidos")
+     *         )
+     *     )
+     * )
      */
     public function store(Request $request): JsonResponse
     {
@@ -80,7 +185,100 @@ class OrderController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/v1/orders/{id}",
+     *     summary="Obtener pedido específico",
+     *     description="Obtiene los detalles completos de un pedido específico del usuario autenticado",
+     *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID del pedido",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Pedido obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Pedido obtenido correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", format="uuid"),
+     *                 @OA\Property(property="order_number", type="string", example="ORD-2024-001"),
+     *                 @OA\Property(property="status", type="string", example="pending"),
+     *                 @OA\Property(property="payment_status", type="string", example="pending"),
+     *                 @OA\Property(property="subtotal", type="number", format="float", example=2999.97),
+     *                 @OA\Property(property="tax_amount", type="number", format="float", example=299.99),
+     *                 @OA\Property(property="shipping_cost", type="number", format="float", example=500.00),
+     *                 @OA\Property(property="discount_amount", type="number", format="float", example=0.00),
+     *                 @OA\Property(property="total_amount", type="number", format="float", example=3799.96),
+     *                 @OA\Property(property="currency", type="string", example="USD"),
+     *                 @OA\Property(
+     *                     property="shipping_address",
+     *                     type="object",
+     *                     @OA\Property(property="street_address", type="string", example="Av. Corrientes 1234"),
+     *                     @OA\Property(property="city", type="string", example="Buenos Aires"),
+     *                     @OA\Property(property="state", type="string", example="Buenos Aires"),
+     *                     @OA\Property(property="postal_code", type="string", example="1043"),
+     *                     @OA\Property(property="country", type="string", example="Argentina")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="billing_address",
+     *                     type="object",
+     *                     @OA\Property(property="street_address", type="string", example="Av. Corrientes 1234"),
+     *                     @OA\Property(property="city", type="string", example="Buenos Aires"),
+     *                     @OA\Property(property="state", type="string", example="Buenos Aires"),
+     *                     @OA\Property(property="postal_code", type="string", example="1043"),
+     *                     @OA\Property(property="country", type="string", example="Argentina")
+     *                 ),
+     *                 @OA\Property(property="notes", type="string", example="Entregar después de las 18:00"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(
+     *                     property="items",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="string", format="uuid"),
+     *                         @OA\Property(property="product_name", type="string", example="iPhone 15 Pro"),
+     *                         @OA\Property(property="product_sku", type="string", example="IPHONE15PRO-128"),
+     *                         @OA\Property(property="quantity", type="integer", example=2),
+     *                         @OA\Property(property="unit_price", type="number", format="float", example=999.99),
+     *                         @OA\Property(property="total_price", type="number", format="float", example=1999.98),
+     *                         @OA\Property(
+     *                             property="product",
+     *                             type="object",
+     *                             @OA\Property(property="id", type="string", format="uuid"),
+     *                             @OA\Property(property="name", type="string", example="iPhone 15 Pro"),
+     *                             @OA\Property(property="slug", type="string", example="iphone-15-pro"),
+     *                             @OA\Property(property="image", type="string", example="https://example.com/image.jpg"),
+     *                             @OA\Property(property="description", type="string", example="El último iPhone con características avanzadas")
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Pedido no encontrado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function show(string $id): JsonResponse
     {
@@ -148,7 +346,28 @@ class OrderController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     *     path="/api/v1/orders/{id}",
+     *     summary="Actualizar pedido (No permitido)",
+     *     description="Los pedidos no se pueden actualizar directamente desde la API",
+     *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID del pedido",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=405,
+     *         description="Método no permitido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Los pedidos no se pueden actualizar desde la API")
+     *         )
+     *     )
+     * )
      */
     public function update(Request $request, string $id): JsonResponse
     {
@@ -160,7 +379,28 @@ class OrderController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     *     path="/api/v1/orders/{id}",
+     *     summary="Eliminar pedido (No permitido)",
+     *     description="Los pedidos no se pueden eliminar directamente desde la API",
+     *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID del pedido",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=405,
+     *         description="Método no permitido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Los pedidos no se pueden eliminar desde la API")
+     *         )
+     *     )
+     * )
      */
     public function destroy(string $id): JsonResponse
     {
@@ -172,7 +412,90 @@ class OrderController extends Controller
     }
 
     /**
-     * Obtener pedidos por estado
+     * @OA\Get(
+     *     path="/api/v1/orders/status/{status}",
+     *     summary="Obtener pedidos por estado",
+     *     description="Obtiene una lista paginada de pedidos del usuario filtrados por estado",
+     *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="status",
+     *         in="path",
+     *         description="Estado del pedido",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"pending", "processing", "shipped", "delivered", "cancelled"},
+     *             example="pending"
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Elementos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Pedidos obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Pedidos con estado 'pending' obtenidos correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="data", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="order_number", type="string", example="ORD-2024-001"),
+     *                     @OA\Property(property="status", type="string", example="pending"),
+     *                     @OA\Property(property="payment_status", type="string", example="pending"),
+     *                     @OA\Property(property="total_amount", type="number", format="float", example=2999.97),
+     *                     @OA\Property(property="currency", type="string", example="USD"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="items_count", type="integer", example=3)
+     *                 )),
+     *                 @OA\Property(property="first_page_url", type="string"),
+     *                 @OA\Property(property="from", type="integer", example=1),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="last_page_url", type="string"),
+     *                 @OA\Property(property="next_page_url", type="string", nullable=true),
+     *                 @OA\Property(property="path", type="string"),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="prev_page_url", type="string", nullable=true),
+     *                 @OA\Property(property="to", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=50)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Estado de pedido no válido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Estado de pedido no válido")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function byStatus(Request $request, string $status): JsonResponse
     {
@@ -222,7 +545,43 @@ class OrderController extends Controller
     }
 
     /**
-     * Obtener estadísticas de pedidos del usuario
+     * @OA\Get(
+     *     path="/api/v1/orders/stats",
+     *     summary="Obtener estadísticas de pedidos",
+     *     description="Obtiene estadísticas completas de los pedidos del usuario autenticado",
+     *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Estadísticas obtenidas exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Estadísticas de pedidos obtenidas correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="total_orders", type="integer", example=25),
+     *                 @OA\Property(property="pending_orders", type="integer", example=3),
+     *                 @OA\Property(property="processing_orders", type="integer", example=2),
+     *                 @OA\Property(property="shipped_orders", type="integer", example=5),
+     *                 @OA\Property(property="delivered_orders", type="integer", example=12),
+     *                 @OA\Property(property="cancelled_orders", type="integer", example=3),
+     *                 @OA\Property(property="total_spent", type="number", format="float", example=74999.25),
+     *                 @OA\Property(property="average_order_value", type="number", format="float", example=2999.97)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function stats(Request $request): JsonResponse
     {

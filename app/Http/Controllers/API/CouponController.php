@@ -12,10 +12,86 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @OA\Tag(
+ *     name="Coupons",
+ *     description="Endpoints para gestión de cupones y descuentos"
+ * )
+ */
 class CouponController extends Controller
 {
     /**
-     * Listar cupones activos
+     * @OA\Get(
+     *     path="/api/v1/coupons",
+     *     summary="Listar cupones activos",
+     *     description="Obtiene una lista paginada de cupones activos disponibles para el usuario",
+     *     tags={"Coupons"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Elementos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cupones obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Cupones obtenidos correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="data", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="code", type="string", example="DESCUENTO20"),
+     *                     @OA\Property(property="name", type="string", example="Descuento 20%"),
+     *                     @OA\Property(property="description", type="string", example="20% de descuento en toda la tienda"),
+     *                     @OA\Property(property="type", type="string", enum={"percentage", "fixed_amount"}, example="percentage"),
+     *                     @OA\Property(property="value", type="number", format="float", example=20.0),
+     *                     @OA\Property(property="minimum_amount", type="number", format="float", example=1000.00),
+     *                     @OA\Property(property="usage_limit", type="integer", example=100),
+     *                     @OA\Property(property="used_count", type="integer", example=45),
+     *                     @OA\Property(property="remaining_uses", type="integer", example=55),
+     *                     @OA\Property(property="starts_at", type="string", format="date-time"),
+     *                     @OA\Property(property="expires_at", type="string", format="date-time"),
+     *                     @OA\Property(property="is_available", type="boolean", example=true),
+     *                     @OA\Property(property="user_usage_count", type="integer", example=0)
+     *                 )),
+     *                 @OA\Property(property="first_page_url", type="string"),
+     *                 @OA\Property(property="from", type="integer", example=1),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="last_page_url", type="string"),
+     *                 @OA\Property(property="next_page_url", type="string", nullable=true),
+     *                 @OA\Property(property="path", type="string"),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="prev_page_url", type="string", nullable=true),
+     *                 @OA\Property(property="to", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=50)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function index(Request $request): JsonResponse
     {
@@ -62,7 +138,70 @@ class CouponController extends Controller
     }
 
     /**
-     * Validar cupón
+     * @OA\Post(
+     *     path="/api/v1/coupons/validate",
+     *     summary="Validar cupón",
+     *     description="Valida un código de cupón y calcula el descuento aplicable",
+     *     tags={"Coupons"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"code","subtotal"},
+     *             @OA\Property(property="code", type="string", example="DESCUENTO20", description="Código del cupón a validar"),
+     *             @OA\Property(property="subtotal", type="number", format="float", example=2999.97, description="Subtotal del carrito para validar monto mínimo")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cupón válido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Cupón válido"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="coupon",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="code", type="string", example="DESCUENTO20"),
+     *                     @OA\Property(property="name", type="string", example="Descuento 20%"),
+     *                     @OA\Property(property="description", type="string", example="20% de descuento en toda la tienda"),
+     *                     @OA\Property(property="type", type="string", example="percentage"),
+     *                     @OA\Property(property="value", type="number", format="float", example=20.0),
+     *                     @OA\Property(property="minimum_amount", type="number", format="float", example=1000.00),
+     *                     @OA\Property(property="discount_amount", type="number", format="float", example=599.99),
+     *                     @OA\Property(property="subtotal", type="number", format="float", example=2999.97),
+     *                     @OA\Property(property="final_amount", type="number", format="float", example=2399.98)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Cupón no válido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Cupón no válido o inactivo")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function validate(Request $request): JsonResponse
     {
@@ -168,7 +307,78 @@ class CouponController extends Controller
     }
 
     /**
-     * Aplicar cupón a un pedido
+     * @OA\Post(
+     *     path="/api/v1/coupons/apply",
+     *     summary="Aplicar cupón a pedido",
+     *     description="Aplica un cupón válido a un pedido específico y actualiza los totales",
+     *     tags={"Coupons"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"code","order_id"},
+     *             @OA\Property(property="code", type="string", example="DESCUENTO20", description="Código del cupón a aplicar"),
+     *             @OA\Property(property="order_id", type="string", format="uuid", description="ID del pedido al que aplicar el cupón")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cupón aplicado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Cupón aplicado correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="order",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="subtotal", type="number", format="float", example=2999.97),
+     *                     @OA\Property(property="discount_amount", type="number", format="float", example=599.99),
+     *                     @OA\Property(property="total_amount", type="number", format="float", example=2399.98)
+     *                 ),
+     *                 @OA\Property(
+     *                     property="coupon",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="code", type="string", example="DESCUENTO20"),
+     *                     @OA\Property(property="name", type="string", example="Descuento 20%"),
+     *                     @OA\Property(property="type", type="string", example="percentage"),
+     *                     @OA\Property(property="value", type="number", format="float", example=20.0)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Error al aplicar cupón",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Cupón no válido o inactivo")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Pedido no encontrado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function apply(Request $request): JsonResponse
     {
@@ -286,7 +496,68 @@ class CouponController extends Controller
     }
 
     /**
-     * Remover cupón de un pedido
+     * @OA\Post(
+     *     path="/api/v1/coupons/remove",
+     *     summary="Remover cupón de pedido",
+     *     description="Remueve un cupón aplicado de un pedido y actualiza los totales",
+     *     tags={"Coupons"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"order_id"},
+     *             @OA\Property(property="order_id", type="string", format="uuid", description="ID del pedido del que remover el cupón")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cupón removido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Cupón removido correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="order",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="subtotal", type="number", format="float", example=2999.97),
+     *                     @OA\Property(property="discount_amount", type="number", format="float", example=0.00),
+     *                     @OA\Property(property="total_amount", type="number", format="float", example=2999.97)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Error al remover cupón",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="El pedido no tiene cupón aplicado")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Pedido no encontrado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function remove(Request $request): JsonResponse
     {
@@ -370,7 +641,82 @@ class CouponController extends Controller
     }
 
     /**
-     * Obtener historial de cupones del usuario
+     * @OA\Get(
+     *     path="/api/v1/coupons/history",
+     *     summary="Obtener historial de cupones",
+     *     description="Obtiene el historial de cupones utilizados por el usuario autenticado",
+     *     tags={"Coupons"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Elementos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Historial obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Historial de cupones obtenido correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="data", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(
+     *                         property="coupon",
+     *                         type="object",
+     *                         @OA\Property(property="id", type="string", format="uuid"),
+     *                         @OA\Property(property="code", type="string", example="DESCUENTO20"),
+     *                         @OA\Property(property="name", type="string", example="Descuento 20%"),
+     *                         @OA\Property(property="type", type="string", example="percentage"),
+     *                         @OA\Property(property="value", type="number", format="float", example=20.0)
+     *                     ),
+     *                     @OA\Property(
+     *                         property="order",
+     *                         type="object",
+     *                         @OA\Property(property="id", type="string", format="uuid"),
+     *                         @OA\Property(property="order_number", type="string", example="ORD-2024-001"),
+     *                         @OA\Property(property="total_amount", type="number", format="float", example=2399.98)
+     *                     ),
+     *                     @OA\Property(property="discount_amount", type="number", format="float", example=599.99),
+     *                     @OA\Property(property="used_at", type="string", format="date-time")
+     *                 )),
+     *                 @OA\Property(property="first_page_url", type="string"),
+     *                 @OA\Property(property="from", type="integer", example=1),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="last_page_url", type="string"),
+     *                 @OA\Property(property="next_page_url", type="string", nullable=true),
+     *                 @OA\Property(property="path", type="string"),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="prev_page_url", type="string", nullable=true),
+     *                 @OA\Property(property="to", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=50)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function history(Request $request): JsonResponse
     {

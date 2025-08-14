@@ -12,6 +12,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @OA\Tag(
+ *     name="Anonymous Cart",
+ *     description="Endpoints para gestión del carrito de compras anónimo"
+ * )
+ */
 class AnonymousCartController extends Controller
 {
     private CartMergeService $cartMergeService;
@@ -22,7 +28,73 @@ class AnonymousCartController extends Controller
     }
 
     /**
-     * Obtener el carrito anónimo
+     * @OA\Get(
+     *     path="/api/v1/anonymous-cart",
+     *     summary="Obtener el carrito anónimo",
+     *     description="Obtiene el contenido completo del carrito de compras anónimo",
+     *     tags={"Anonymous Cart"},
+     *     @OA\Parameter(
+     *         name="X-Session-ID",
+     *         in="header",
+     *         description="ID de sesión del usuario anónimo",
+     *         required=true,
+     *         @OA\Schema(type="string", example="session_1234567890")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Carrito anónimo obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Carrito anónimo obtenido correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="string", format="uuid", nullable=true),
+     *                 @OA\Property(
+     *                     property="items",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="string", format="uuid"),
+     *                         @OA\Property(
+     *                             property="product",
+     *                             type="object",
+     *                             @OA\Property(property="id", type="string", format="uuid"),
+     *                             @OA\Property(property="name", type="string", example="Producto Ejemplo"),
+     *                             @OA\Property(property="slug", type="string", example="producto-ejemplo"),
+     *                             @OA\Property(property="image", type="string", example="https://example.com/image.jpg"),
+     *                             @OA\Property(property="category", type="string", example="Electrónicos"),
+     *                             @OA\Property(property="brand", type="string", example="Marca Ejemplo")
+     *                         ),
+     *                         @OA\Property(property="quantity", type="integer", example=2),
+     *                         @OA\Property(property="price", type="number", format="float", example=29.99),
+     *                         @OA\Property(property="original_price", type="number", format="float", example=39.99, nullable=true),
+     *                         @OA\Property(property="subtotal", type="number", format="float", example=59.98),
+     *                         @OA\Property(property="savings", type="number", format="float", example=20.00),
+     *                         @OA\Property(property="has_discount", type="boolean", example=true),
+     *                         @OA\Property(property="discount_percentage", type="number", format="float", example=25.0)
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="total_items", type="integer", example=5),
+     *                 @OA\Property(property="total", type="number", format="float", example=149.95),
+     *                 @OA\Property(property="total_savings", type="number", format="float", example=50.00)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Session ID requerido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Session ID requerido")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function index(Request $request): JsonResponse
     {
@@ -98,7 +170,76 @@ class AnonymousCartController extends Controller
     }
 
     /**
-     * Agregar item al carrito anónimo
+     * @OA\Post(
+     *     path="/api/v1/anonymous-cart/add",
+     *     summary="Agregar item al carrito anónimo",
+     *     description="Agrega un producto al carrito de compras anónimo",
+     *     tags={"Anonymous Cart"},
+     *     @OA\Parameter(
+     *         name="X-Session-ID",
+     *         in="header",
+     *         description="ID de sesión del usuario anónimo",
+     *         required=true,
+     *         @OA\Schema(type="string", example="session_1234567890")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product_id","quantity"},
+     *             @OA\Property(property="product_id", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000", description="ID del producto"),
+     *             @OA\Property(property="quantity", type="integer", minimum=1, example=2, description="Cantidad a agregar")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Producto agregado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Producto agregado al carrito anónimo correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="item",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(
+     *                         property="product",
+     *                         type="object",
+     *                         @OA\Property(property="id", type="string", format="uuid"),
+     *                         @OA\Property(property="name", type="string", example="Producto Ejemplo"),
+     *                         @OA\Property(property="slug", type="string", example="producto-ejemplo"),
+     *                         @OA\Property(property="image", type="string", example="https://example.com/image.jpg")
+     *                     ),
+     *                     @OA\Property(property="quantity", type="integer", example=2),
+     *                     @OA\Property(property="price", type="number", format="float", example=29.99),
+     *                     @OA\Property(property="original_price", type="number", format="float", example=39.99, nullable=true),
+     *                     @OA\Property(property="subtotal", type="number", format="float", example=59.98)
+     *                 ),
+     *                 @OA\Property(property="cart_total_items", type="integer", example=5),
+     *                 @OA\Property(property="cart_total", type="number", format="float", example=149.95)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Session ID requerido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Session ID requerido")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function addItem(Request $request): JsonResponse
     {
@@ -201,7 +342,70 @@ class AnonymousCartController extends Controller
     }
 
     /**
-     * Actualizar cantidad de un item en el carrito anónimo
+     * @OA\Put(
+     *     path="/api/v1/anonymous-cart/items/{itemId}",
+     *     summary="Actualizar cantidad de un item en el carrito anónimo",
+     *     description="Actualiza la cantidad de un producto específico en el carrito anónimo",
+     *     tags={"Anonymous Cart"},
+     *     @OA\Parameter(
+     *         name="X-Session-ID",
+     *         in="header",
+     *         description="ID de sesión del usuario anónimo",
+     *         required=true,
+     *         @OA\Schema(type="string", example="session_1234567890")
+     *     ),
+     *     @OA\Parameter(
+     *         name="itemId",
+     *         in="path",
+     *         description="ID del item del carrito",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"quantity"},
+     *             @OA\Property(property="quantity", type="integer", minimum=0, example=3, description="Nueva cantidad (0 para remover)")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cantidad actualizada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Cantidad actualizada correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="cart_total_items", type="integer", example=4),
+     *                 @OA\Property(property="cart_total", type="number", format="float", example=119.96)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Session ID requerido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Session ID requerido")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Carrito o item no encontrado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function updateItem(Request $request, string $itemId): JsonResponse
     {
@@ -279,7 +483,58 @@ class AnonymousCartController extends Controller
     }
 
     /**
-     * Remover item del carrito anónimo
+     * @OA\Delete(
+     *     path="/api/v1/anonymous-cart/items/{itemId}",
+     *     summary="Remover item del carrito anónimo",
+     *     description="Elimina un producto específico del carrito anónimo",
+     *     tags={"Anonymous Cart"},
+     *     @OA\Parameter(
+     *         name="X-Session-ID",
+     *         in="header",
+     *         description="ID de sesión del usuario anónimo",
+     *         required=true,
+     *         @OA\Schema(type="string", example="session_1234567890")
+     *     ),
+     *     @OA\Parameter(
+     *         name="itemId",
+     *         in="path",
+     *         description="ID del item del carrito",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Producto removido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Producto removido del carrito anónimo correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="cart_total_items", type="integer", example=3),
+     *                 @OA\Property(property="cart_total", type="number", format="float", example=89.97)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Session ID requerido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Session ID requerido")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Carrito o item no encontrado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function removeItem(Request $request, string $itemId): JsonResponse
     {
@@ -323,7 +578,40 @@ class AnonymousCartController extends Controller
     }
 
     /**
-     * Limpiar carrito anónimo
+     * @OA\Delete(
+     *     path="/api/v1/anonymous-cart/clear",
+     *     summary="Limpiar carrito anónimo",
+     *     description="Elimina todos los productos del carrito anónimo",
+     *     tags={"Anonymous Cart"},
+     *     @OA\Parameter(
+     *         name="X-Session-ID",
+     *         in="header",
+     *         description="ID de sesión del usuario anónimo",
+     *         required=true,
+     *         @OA\Schema(type="string", example="session_1234567890")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Carrito limpiado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Carrito anónimo limpiado correctamente")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Session ID requerido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Session ID requerido")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function clear(Request $request): JsonResponse
     {

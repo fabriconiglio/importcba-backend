@@ -262,6 +262,25 @@ namespace App\Http\Controllers\API;
  *     @OA\Property(property="created_at", type="string", format="date-time"),
  *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
+ * 
+ * @OA\Schema(
+ *     schema="Address",
+ *     title="Dirección",
+ *     description="Modelo de dirección",
+ *     @OA\Property(property="id", type="string", format="uuid"),
+ *     @OA\Property(property="user_id", type="string", format="uuid"),
+ *     @OA\Property(property="first_name", type="string", example="Juan"),
+ *     @OA\Property(property="last_name", type="string", example="Pérez"),
+ *     @OA\Property(property="street_address", type="string", example="Av. Corrientes 1234"),
+ *     @OA\Property(property="city", type="string", example="Buenos Aires"),
+ *     @OA\Property(property="state", type="string", example="Buenos Aires"),
+ *     @OA\Property(property="postal_code", type="string", example="1043"),
+ *     @OA\Property(property="country", type="string", example="Argentina"),
+ *     @OA\Property(property="phone", type="string", example="+5491112345678"),
+ *     @OA\Property(property="is_default", type="boolean", example=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
  */
 class SwaggerSchemas
 {

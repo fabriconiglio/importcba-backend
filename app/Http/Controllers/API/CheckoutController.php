@@ -21,6 +21,12 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
+/**
+ * @OA\Tag(
+ *     name="Checkout",
+ *     description="Endpoints para proceso de checkout y creación de pedidos"
+ * )
+ */
 class CheckoutController extends Controller
 {
     private StockReservationService $stockReservationService;
@@ -33,7 +39,70 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Iniciar checkout - Obtener información inicial
+     * @OA\Get(
+     *     path="/api/v1/checkout/init",
+     *     summary="Iniciar checkout",
+     *     description="Obtiene información inicial para el proceso de checkout",
+     *     tags={"Checkout"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Información de checkout obtenida exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Información de checkout obtenida"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="cart",
+     *                     type="object",
+     *                     @OA\Property(property="total_items", type="integer", example=3),
+     *                     @OA\Property(property="subtotal", type="number", format="float", example=2999.97),
+     *                     @OA\Property(property="total", type="number", format="float", example=2999.97)
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shipping_methods",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="string", format="uuid"),
+     *                         @OA\Property(property="name", type="string", example="Envío Estándar"),
+     *                         @OA\Property(property="description", type="string", example="Entrega en 3-5 días hábiles"),
+     *                         @OA\Property(property="cost", type="number", format="float", example=500.00),
+     *                         @OA\Property(property="estimated_days", type="integer", example=5)
+     *                     )
+     *                 ),
+     *                 @OA\Property(
+     *                     property="payment_methods",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="string", format="uuid"),
+     *                         @OA\Property(property="name", type="string", example="Tarjeta de Crédito"),
+     *                         @OA\Property(property="type", type="string", example="credit_card"),
+     *                         @OA\Property(property="description", type="string", example="Pago con tarjeta de crédito")
+     *                     )
+     *                 ),
+     *                 @OA\Property(
+     *                     property="user_addresses",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Address")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Carrito vacío",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function initiate(Request $request): JsonResponse
     {
@@ -128,7 +197,76 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Calcular envío y totales
+     * @OA\Post(
+     *     path="/api/v1/checkout/calculate",
+     *     summary="Calcular totales de checkout",
+     *     description="Calcula los totales del pedido incluyendo envío, impuestos y descuentos",
+     *     tags={"Checkout"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"shipping_method_id","shipping_address"},
+     *             @OA\Property(property="shipping_method_id", type="string", format="uuid", description="ID del método de envío"),
+     *             @OA\Property(property="payment_method_id", type="string", format="uuid", description="ID del método de pago"),
+     *             @OA\Property(property="coupon_code", type="string", example="DESCUENTO20", description="Código de cupón (opcional)"),
+     *             @OA\Property(
+     *                 property="shipping_address",
+     *                 type="object",
+     *                 required={"first_name","last_name","address","city","state","postal_code","country","phone"},
+     *                 @OA\Property(property="first_name", type="string", example="Juan"),
+     *                 @OA\Property(property="last_name", type="string", example="Pérez"),
+     *                 @OA\Property(property="address", type="string", example="Av. Corrientes 1234"),
+     *                 @OA\Property(property="city", type="string", example="Buenos Aires"),
+     *                 @OA\Property(property="state", type="string", example="Buenos Aires"),
+     *                 @OA\Property(property="postal_code", type="string", example="1043"),
+     *                 @OA\Property(property="country", type="string", example="Argentina"),
+     *                 @OA\Property(property="phone", type="string", example="+5491112345678")
+     *             ),
+     *             @OA\Property(
+     *                 property="billing_address",
+     *                 type="object",
+     *                 description="Dirección de facturación (opcional)"
+     *             ),
+     *             @OA\Property(property="notes", type="string", example="Entregar después de las 18:00", description="Notas adicionales")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Totales calculados exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Totales calculados correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="subtotal", type="number", format="float", example=2999.97),
+     *                 @OA\Property(property="shipping_cost", type="number", format="float", example=500.00),
+     *                 @OA\Property(property="tax_amount", type="number", format="float", example=599.99),
+     *                 @OA\Property(property="discount_amount", type="number", format="float", example=600.00),
+     *                 @OA\Property(property="total_amount", type="number", format="float", example=3499.96),
+     *                 @OA\Property(
+     *                     property="coupon_applied",
+     *                     type="object",
+     *                     @OA\Property(property="code", type="string", example="DESCUENTO20"),
+     *                     @OA\Property(property="discount_type", type="string", example="percentage"),
+     *                     @OA\Property(property="discount_value", type="number", format="float", example=20.0)
+     *                 ),
+     *                 @OA\Property(
+     *                     property="shipping_method",
+     *                     type="object",
+     *                     @OA\Property(property="name", type="string", example="Envío Estándar"),
+     *                     @OA\Property(property="estimated_days", type="integer", example=5)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     )
+     * )
      */
     public function calculate(Request $request): JsonResponse
     {
@@ -273,7 +411,75 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Confirmar y crear el pedido
+     * @OA\Post(
+     *     path="/api/v1/checkout/confirm",
+     *     summary="Confirmar pedido",
+     *     description="Confirma el pedido y crea la orden en el sistema",
+     *     tags={"Checkout"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"shipping_method_id","payment_method_id","shipping_address"},
+     *             @OA\Property(property="shipping_method_id", type="string", format="uuid", description="ID del método de envío"),
+     *             @OA\Property(property="payment_method_id", type="string", format="uuid", description="ID del método de pago"),
+     *             @OA\Property(property="coupon_code", type="string", example="DESCUENTO20", description="Código de cupón (opcional)"),
+     *             @OA\Property(
+     *                 property="shipping_address",
+     *                 type="object",
+     *                 required={"first_name","last_name","address","city","state","postal_code","country","phone"},
+     *                 @OA\Property(property="first_name", type="string", example="Juan"),
+     *                 @OA\Property(property="last_name", type="string", example="Pérez"),
+     *                 @OA\Property(property="address", type="string", example="Av. Corrientes 1234"),
+     *                 @OA\Property(property="city", type="string", example="Buenos Aires"),
+     *                 @OA\Property(property="state", type="string", example="Buenos Aires"),
+     *                 @OA\Property(property="postal_code", type="string", example="1043"),
+     *                 @OA\Property(property="country", type="string", example="Argentina"),
+     *                 @OA\Property(property="phone", type="string", example="+5491112345678")
+     *             ),
+     *             @OA\Property(
+     *                 property="billing_address",
+     *                 type="object",
+     *                 description="Dirección de facturación (opcional)"
+     *             ),
+     *             @OA\Property(property="notes", type="string", example="Entregar después de las 18:00", description="Notas adicionales")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Pedido creado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Pedido creado correctamente. Se ha enviado un email de confirmación."),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="order",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="order_number", type="string", example="ORD-2024-001"),
+     *                     @OA\Property(property="subtotal", type="number", format="float", example=2999.97),
+     *                     @OA\Property(property="shipping_cost", type="number", format="float", example=500.00),
+     *                     @OA\Property(property="tax_amount", type="number", format="float", example=599.99),
+     *                     @OA\Property(property="discount_amount", type="number", format="float", example=600.00),
+     *                     @OA\Property(property="total_amount", type="number", format="float", example=3499.96)
+     *                 ),
+     *                 @OA\Property(property="email_sent", type="boolean", example=true)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Error en el proceso de checkout",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function confirm(Request $request): JsonResponse
     {
@@ -468,7 +674,39 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Obtener métodos de envío disponibles
+     * @OA\Get(
+     *     path="/api/v1/checkout/shipping-methods",
+     *     summary="Obtener métodos de envío",
+     *     description="Obtiene todos los métodos de envío activos disponibles",
+     *     tags={"Checkout"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Métodos de envío obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Métodos de envío obtenidos correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Envío Estándar"),
+     *                     @OA\Property(property="description", type="string", example="Entrega en 3-5 días hábiles"),
+     *                     @OA\Property(property="cost", type="number", format="float", example=500.00),
+     *                     @OA\Property(property="estimated_days", type="integer", example=5),
+     *                     @OA\Property(property="is_active", type="boolean", example=true)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function shippingMethods(): JsonResponse
     {
@@ -490,7 +728,38 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Obtener métodos de pago disponibles
+     * @OA\Get(
+     *     path="/api/v1/checkout/payment-methods",
+     *     summary="Obtener métodos de pago",
+     *     description="Obtiene todos los métodos de pago activos disponibles",
+     *     tags={"Checkout"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Métodos de pago obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Métodos de pago obtenidos correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Tarjeta de Crédito"),
+     *                     @OA\Property(property="type", type="string", example="credit_card"),
+     *                     @OA\Property(property="description", type="string", example="Pago con tarjeta de crédito"),
+     *                     @OA\Property(property="is_active", type="boolean", example=true)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function paymentMethods(): JsonResponse
     {
@@ -512,7 +781,63 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Validar cupón
+     * @OA\Post(
+     *     path="/api/v1/checkout/validate-coupon",
+     *     summary="Validar cupón",
+     *     description="Valida un código de cupón y calcula el descuento aplicable",
+     *     tags={"Checkout"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"coupon_code","subtotal"},
+     *             @OA\Property(property="coupon_code", type="string", example="DESCUENTO20", description="Código del cupón a validar"),
+     *             @OA\Property(property="subtotal", type="number", format="float", example=2999.97, description="Subtotal del carrito para validar monto mínimo")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cupón válido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Cupón válido"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="coupon",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="code", type="string", example="DESCUENTO20"),
+     *                     @OA\Property(property="name", type="string", example="Descuento 20%"),
+     *                     @OA\Property(property="description", type="string", example="20% de descuento en toda la compra"),
+     *                     @OA\Property(property="discount_type", type="string", example="percentage"),
+     *                     @OA\Property(property="discount_value", type="number", format="float", example=20.0),
+     *                     @OA\Property(property="discount_amount", type="number", format="float", example=599.99),
+     *                     @OA\Property(property="minimum_amount", type="number", format="float", example=1000.00)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Cupón no válido",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Cupón no válido o expirado")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function validateCoupon(Request $request): JsonResponse
     {
