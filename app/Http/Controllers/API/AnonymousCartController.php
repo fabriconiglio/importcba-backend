@@ -645,7 +645,36 @@ class AnonymousCartController extends Controller
     }
 
     /**
-     * Obtener cantidad de items en el carrito anónimo
+     * @OA\Get(
+     *     path="/api/v1/anonymous-cart/count",
+     *     summary="Obtener cantidad de items en el carrito anónimo",
+     *     description="Obtiene el número total de productos en el carrito anónimo",
+     *     tags={"Anonymous Cart"},
+     *     @OA\Parameter(
+     *         name="X-Session-ID",
+     *         in="header",
+     *         description="ID de sesión del usuario anónimo",
+     *         required=false,
+     *         @OA\Schema(type="string", example="session_1234567890")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cantidad obtenida exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="count", type="integer", example=5)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function count(Request $request): JsonResponse
     {
@@ -677,7 +706,37 @@ class AnonymousCartController extends Controller
     }
 
     /**
-     * Obtener total del carrito anónimo
+     * @OA\Get(
+     *     path="/api/v1/anonymous-cart/total",
+     *     summary="Obtener total del carrito anónimo",
+     *     description="Obtiene el total monetario y ahorros del carrito anónimo",
+     *     tags={"Anonymous Cart"},
+     *     @OA\Parameter(
+     *         name="X-Session-ID",
+     *         in="header",
+     *         description="ID de sesión del usuario anónimo",
+     *         required=false,
+     *         @OA\Schema(type="string", example="session_1234567890")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Total obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="total", type="number", format="float", example=149.95),
+     *                 @OA\Property(property="savings", type="number", format="float", example=50.00)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function total(Request $request): JsonResponse
     {

@@ -20,6 +20,798 @@
         }
     ],
     "paths": {
+        "/api/v1/anonymous-cart": {
+            "get": {
+                "tags": [
+                    "Anonymous Cart"
+                ],
+                "summary": "Obtener el carrito anónimo",
+                "description": "Obtiene el contenido completo del carrito de compras anónimo",
+                "operationId": "c8adc94b789616937049e59c017ec6f3",
+                "parameters": [
+                    {
+                        "name": "X-Session-ID",
+                        "in": "header",
+                        "description": "ID de sesión del usuario anónimo",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "session_1234567890"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Carrito anónimo obtenido exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Carrito anónimo obtenido correctamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "nullable": true
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string",
+                                                                "format": "uuid"
+                                                            },
+                                                            "product": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string",
+                                                                        "format": "uuid"
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "Producto Ejemplo"
+                                                                    },
+                                                                    "slug": {
+                                                                        "type": "string",
+                                                                        "example": "producto-ejemplo"
+                                                                    },
+                                                                    "image": {
+                                                                        "type": "string",
+                                                                        "example": "https://example.com/image.jpg"
+                                                                    },
+                                                                    "category": {
+                                                                        "type": "string",
+                                                                        "example": "Electrónicos"
+                                                                    },
+                                                                    "brand": {
+                                                                        "type": "string",
+                                                                        "example": "Marca Ejemplo"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "quantity": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            },
+                                                            "price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 29.99
+                                                            },
+                                                            "original_price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 39.99,
+                                                                "nullable": true
+                                                            },
+                                                            "subtotal": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 59.98
+                                                            },
+                                                            "savings": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 20
+                                                            },
+                                                            "has_discount": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            },
+                                                            "discount_percentage": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 25
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "total_items": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 149.95
+                                                },
+                                                "total_savings": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Session ID requerido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Session ID requerido"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/anonymous-cart/add": {
+            "post": {
+                "tags": [
+                    "Anonymous Cart"
+                ],
+                "summary": "Agregar item al carrito anónimo",
+                "description": "Agrega un producto al carrito de compras anónimo",
+                "operationId": "88628d1926099832b8412dc767568904",
+                "parameters": [
+                    {
+                        "name": "X-Session-ID",
+                        "in": "header",
+                        "description": "ID de sesión del usuario anónimo",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "session_1234567890"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "quantity"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "description": "ID del producto",
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                                    },
+                                    "quantity": {
+                                        "description": "Cantidad a agregar",
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Producto agregado exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Producto agregado al carrito anónimo correctamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "item": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string",
+                                                            "format": "uuid"
+                                                        },
+                                                        "product": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "string",
+                                                                    "format": "uuid"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Producto Ejemplo"
+                                                                },
+                                                                "slug": {
+                                                                    "type": "string",
+                                                                    "example": "producto-ejemplo"
+                                                                },
+                                                                "image": {
+                                                                    "type": "string",
+                                                                    "example": "https://example.com/image.jpg"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "quantity": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        },
+                                                        "price": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 29.99
+                                                        },
+                                                        "original_price": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 39.99,
+                                                            "nullable": true
+                                                        },
+                                                        "subtotal": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 59.98
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "cart_total_items": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "cart_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 149.95
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Session ID requerido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Session ID requerido"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/anonymous-cart/items/{itemId}": {
+            "put": {
+                "tags": [
+                    "Anonymous Cart"
+                ],
+                "summary": "Actualizar cantidad de un item en el carrito anónimo",
+                "description": "Actualiza la cantidad de un producto específico en el carrito anónimo",
+                "operationId": "909dee216b29a1e202a6b39c4838296f",
+                "parameters": [
+                    {
+                        "name": "X-Session-ID",
+                        "in": "header",
+                        "description": "ID de sesión del usuario anónimo",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "session_1234567890"
+                        }
+                    },
+                    {
+                        "name": "itemId",
+                        "in": "path",
+                        "description": "ID del item del carrito",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quantity"
+                                ],
+                                "properties": {
+                                    "quantity": {
+                                        "description": "Nueva cantidad (0 para remover)",
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cantidad actualizada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cantidad actualizada correctamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "cart_total_items": {
+                                                    "type": "integer",
+                                                    "example": 4
+                                                },
+                                                "cart_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 119.96
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Session ID requerido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Session ID requerido"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Carrito o item no encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Anonymous Cart"
+                ],
+                "summary": "Remover item del carrito anónimo",
+                "description": "Elimina un producto específico del carrito anónimo",
+                "operationId": "7d9461035804450a79d39c90a1769f8f",
+                "parameters": [
+                    {
+                        "name": "X-Session-ID",
+                        "in": "header",
+                        "description": "ID de sesión del usuario anónimo",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "session_1234567890"
+                        }
+                    },
+                    {
+                        "name": "itemId",
+                        "in": "path",
+                        "description": "ID del item del carrito",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Producto removido exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Producto removido del carrito anónimo correctamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "cart_total_items": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "cart_total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 89.97
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Session ID requerido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Session ID requerido"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Carrito o item no encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/anonymous-cart/clear": {
+            "delete": {
+                "tags": [
+                    "Anonymous Cart"
+                ],
+                "summary": "Limpiar carrito anónimo",
+                "description": "Elimina todos los productos del carrito anónimo",
+                "operationId": "cef1f8a26c862b29747c8555a39636fa",
+                "parameters": [
+                    {
+                        "name": "X-Session-ID",
+                        "in": "header",
+                        "description": "ID de sesión del usuario anónimo",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "session_1234567890"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Carrito limpiado exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Carrito anónimo limpiado correctamente"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Session ID requerido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Session ID requerido"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/anonymous-cart/count": {
+            "get": {
+                "tags": [
+                    "Anonymous Cart"
+                ],
+                "summary": "Obtener cantidad de items en el carrito anónimo",
+                "description": "Obtiene el número total de productos en el carrito anónimo",
+                "operationId": "9f670b8a06bb336c27f78d302771c222",
+                "parameters": [
+                    {
+                        "name": "X-Session-ID",
+                        "in": "header",
+                        "description": "ID de sesión del usuario anónimo",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "session_1234567890"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cantidad obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "count": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/anonymous-cart/total": {
+            "get": {
+                "tags": [
+                    "Anonymous Cart"
+                ],
+                "summary": "Obtener total del carrito anónimo",
+                "description": "Obtiene el total monetario y ahorros del carrito anónimo",
+                "operationId": "d7a4eb6d7acdf1518965e54a224ca291",
+                "parameters": [
+                    {
+                        "name": "X-Session-ID",
+                        "in": "header",
+                        "description": "ID de sesión del usuario anónimo",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "session_1234567890"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Total obtenido exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 149.95
+                                                },
+                                                "savings": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/register": {
             "post": {
                 "tags": [
@@ -8305,6 +9097,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Anonymous Cart",
+            "description": "Endpoints para gestión del carrito de compras anónimo"
+        },
         {
             "name": "Autenticación",
             "description": "Endpoints para registro, login y gestión de usuarios"
