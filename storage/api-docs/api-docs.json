@@ -1116,6 +1116,650 @@
                 ]
             }
         },
+        "/api/v1/brands": {
+            "get": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Listar marcas",
+                "description": "Obtiene una lista paginada de marcas con filtros opcionales",
+                "operationId": "49574cb00f6e323f0bf78d8eb4121d8f",
+                "parameters": [
+                    {
+                        "name": "active",
+                        "in": "query",
+                        "description": "Filtrar por estado activo",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Buscar por nombre o descripción",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Apple"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Campo para ordenar",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "name",
+                            "enum": [
+                                "name",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Orden de clasificación",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "asc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Número de elementos por página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Marcas obtenidas exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Marcas obtenidas correctamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Brand"
+                                                    }
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 75
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Crear marca",
+                "description": "Crea una nueva marca de producto",
+                "operationId": "dd3923fdd05a0ef7de3906a2201f685e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "Nombre de la marca",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Apple"
+                                    },
+                                    "description": {
+                                        "description": "Descripción de la marca",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Empresa líder en tecnología"
+                                    },
+                                    "logo_url": {
+                                        "description": "URL del logo de la marca",
+                                        "type": "string",
+                                        "format": "url",
+                                        "maxLength": 500,
+                                        "example": "https://example.com/logo.png"
+                                    },
+                                    "is_active": {
+                                        "description": "Estado activo de la marca",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Marca creada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Marca creada correctamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Brand"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/brands/{id}": {
+            "get": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Obtener marca específica",
+                "description": "Obtiene los detalles de una marca específica incluyendo sus productos",
+                "operationId": "6d99e3d739eb00ed151216edfec667a0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la marca",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Marca obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Marca obtenida correctamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Brand"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Marca no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Actualizar marca",
+                "description": "Actualiza los datos de una marca existente",
+                "operationId": "19559a55f415bb8f38ef6589d902d3ac",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la marca",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "Nombre de la marca",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Apple Inc."
+                                    },
+                                    "description": {
+                                        "description": "Descripción de la marca",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Empresa líder en tecnología e innovación"
+                                    },
+                                    "logo_url": {
+                                        "description": "URL del logo de la marca",
+                                        "type": "string",
+                                        "format": "url",
+                                        "maxLength": 500,
+                                        "example": "https://example.com/new-logo.png"
+                                    },
+                                    "is_active": {
+                                        "description": "Estado activo de la marca",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Marca actualizada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Marca actualizada correctamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Brand"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Marca no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Eliminar marca",
+                "description": "Elimina una marca existente (solo si no tiene productos asociados)",
+                "operationId": "dc581b15c25157ca86ad9537339e6a5c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la marca",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Marca eliminada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Marca eliminada correctamente"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Marca no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "No se puede eliminar (tiene productos asociados)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No se puede eliminar la marca porque tiene productos asociados"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/brands/active/list": {
+            "get": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Obtener marcas activas",
+                "description": "Obtiene todas las marcas activas ordenadas por nombre",
+                "operationId": "900031ae1d73aeac1f70534fef94495e",
+                "responses": {
+                    "200": {
+                        "description": "Marcas activas obtenidas exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Marcas activas obtenidas correctamente"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Brand"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/brands/slug/{slug}": {
+            "get": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Obtener marca por slug",
+                "description": "Obtiene una marca específica por su slug (solo marcas activas)",
+                "operationId": "a2e42433d0c9e478c043c42370f042b3",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug de la marca",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "apple"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Marca obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Marca obtenida correctamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Brand"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Marca no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/cart": {
             "get": {
                 "tags": [
@@ -1369,6 +2013,484 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cart-merge/merge": {
+            "post": {
+                "tags": [
+                    "Cart Merge"
+                ],
+                "summary": "Mergear carrito anónimo con carrito del usuario",
+                "description": "Fusiona el carrito de compras anónimo con el carrito del usuario autenticado",
+                "operationId": "fcf299fa2908cbdca7a4e1b72d7d864a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "session_id"
+                                ],
+                                "properties": {
+                                    "session_id": {
+                                        "description": "ID de sesión del carrito anónimo",
+                                        "type": "string",
+                                        "example": "session_1234567890"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Carrito fusionado exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Carrito fusionado correctamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "merged_items": {
+                                                    "description": "Número de items fusionados",
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "conflicts": {
+                                                    "description": "Número de conflictos resueltos",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "conflict_details": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "product_id": {
+                                                                "type": "string",
+                                                                "format": "uuid"
+                                                            },
+                                                            "anonymous_quantity": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            },
+                                                            "user_quantity": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "final_quantity": {
+                                                                "type": "integer",
+                                                                "example": 3
+                                                            },
+                                                            "resolution": {
+                                                                "description": "sum|max|min|replace",
+                                                                "type": "string",
+                                                                "example": "sum"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "user_cart_id": {
+                                                    "description": "ID del carrito del usuario",
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cart-merge/stats": {
+            "get": {
+                "tags": [
+                    "Cart Merge"
+                ],
+                "summary": "Obtener estadísticas de carritos anónimos",
+                "description": "Obtiene estadísticas sobre carritos anónimos (solo administradores)",
+                "operationId": "1359f33e9cb9aec328632cdb5c8d34c8",
+                "responses": {
+                    "200": {
+                        "description": "Estadísticas obtenidas exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Estadísticas obtenidas correctamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_anonymous_carts": {
+                                                    "description": "Total de carritos anónimos",
+                                                    "type": "integer",
+                                                    "example": 150
+                                                },
+                                                "active_carts": {
+                                                    "description": "Carritos activos (no expirados)",
+                                                    "type": "integer",
+                                                    "example": 45
+                                                },
+                                                "expired_carts": {
+                                                    "description": "Carritos expirados",
+                                                    "type": "integer",
+                                                    "example": 105
+                                                },
+                                                "total_items": {
+                                                    "description": "Total de items en carritos anónimos",
+                                                    "type": "integer",
+                                                    "example": 320
+                                                },
+                                                "average_items_per_cart": {
+                                                    "description": "Promedio de items por carrito",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 2.13
+                                                },
+                                                "total_value": {
+                                                    "description": "Valor total de carritos anónimos",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 15420.5
+                                                },
+                                                "average_cart_value": {
+                                                    "description": "Valor promedio por carrito",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 102.8
+                                                },
+                                                "carts_created_today": {
+                                                    "description": "Carritos creados hoy",
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "carts_expired_today": {
+                                                    "description": "Carritos expirados hoy",
+                                                    "type": "integer",
+                                                    "example": 8
+                                                },
+                                                "merge_success_rate": {
+                                                    "description": "Tasa de éxito en fusiones (0-1)",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0.85
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Acceso denegado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cart-merge/clean-expired": {
+            "post": {
+                "tags": [
+                    "Cart Merge"
+                ],
+                "summary": "Limpiar carritos anónimos expirados",
+                "description": "Elimina todos los carritos anónimos que han expirado (solo administradores)",
+                "operationId": "964b1d49a445c93f1c1dc546341ce8f7",
+                "responses": {
+                    "200": {
+                        "description": "Carritos expirados eliminados exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Se eliminaron 25 carritos anónimos expirados"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "deleted_carts": {
+                                                    "description": "Número de carritos eliminados",
+                                                    "type": "integer",
+                                                    "example": 25
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Acceso denegado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cart-merge/anonymous-info": {
+            "get": {
+                "tags": [
+                    "Cart Merge"
+                ],
+                "summary": "Obtener información del carrito anónimo",
+                "description": "Obtiene información básica sobre un carrito anónimo específico",
+                "operationId": "7cf7dee77c1fa4664ac0a738b22b0801",
+                "parameters": [
+                    {
+                        "name": "session_id",
+                        "in": "query",
+                        "description": "ID de sesión del carrito anónimo",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "session_1234567890"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Información obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Información del carrito anónimo obtenida"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "exists": {
+                                                    "description": "Si el carrito existe",
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "cart_id": {
+                                                    "description": "ID del carrito (si existe)",
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "nullable": true
+                                                },
+                                                "total_items": {
+                                                    "description": "Total de items en el carrito",
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "total": {
+                                                    "description": "Total monetario del carrito",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 89.97
+                                                },
+                                                "total_savings": {
+                                                    "description": "Total de ahorros por descuentos",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 20
+                                                },
+                                                "expires_at": {
+                                                    "description": "Fecha de expiración del carrito",
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-12-31T23:59:59Z",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
                                 }
                             }
                         }
@@ -1898,6 +3020,573 @@
                     },
                     "404": {
                         "description": "Categoría o marca no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/categories": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Listar categorías activas",
+                "description": "Obtiene todas las categorías activas ordenadas por sort_order",
+                "operationId": "58995807822335a74db105355d853969",
+                "responses": {
+                    "200": {
+                        "description": "Categorías obtenidas exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Categorías obtenidas correctamente"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string",
+                                                        "format": "uuid"
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Electrónicos"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "electronicos"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Productos electrónicos y tecnología"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "https://example.com/category.jpg",
+                                                        "nullable": true
+                                                    },
+                                                    "parent_id": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "nullable": true
+                                                    },
+                                                    "sort_order": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "products_count": {
+                                                        "type": "integer",
+                                                        "example": 25
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Crear categoría",
+                "description": "Crea una nueva categoría de productos",
+                "operationId": "11ba809c928dc4651faa40561853e361",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "Nombre de la categoría",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Electrónicos"
+                                    },
+                                    "description": {
+                                        "description": "Descripción de la categoría",
+                                        "type": "string",
+                                        "example": "Productos electrónicos y tecnología"
+                                    },
+                                    "parent_id": {
+                                        "description": "ID de la categoría padre (opcional)",
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                                    },
+                                    "image": {
+                                        "description": "URL de la imagen de la categoría",
+                                        "type": "string",
+                                        "example": "https://example.com/category.jpg"
+                                    },
+                                    "sort_order": {
+                                        "description": "Orden de clasificación",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "is_active": {
+                                        "description": "Estado activo de la categoría",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Categoría creada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Categoría creada correctamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Category"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/categories/{id}": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Obtener categoría específica",
+                "description": "Obtiene los detalles de una categoría específica incluyendo sus subcategorías y productos",
+                "operationId": "465c9ed7a632bab3b53923a9d4779397",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la categoría",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categoría obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Categoría obtenida correctamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Category"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Categoría no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Actualizar categoría",
+                "description": "Actualiza los datos de una categoría existente",
+                "operationId": "724555c471961e09b022e3050f3250cf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la categoría",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "Nombre de la categoría",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Electrónicos Avanzados"
+                                    },
+                                    "description": {
+                                        "description": "Descripción de la categoría",
+                                        "type": "string",
+                                        "example": "Productos electrónicos de última generación"
+                                    },
+                                    "parent_id": {
+                                        "description": "ID de la categoría padre (opcional)",
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                                    },
+                                    "image": {
+                                        "description": "URL de la imagen de la categoría",
+                                        "type": "string",
+                                        "example": "https://example.com/new-category.jpg"
+                                    },
+                                    "sort_order": {
+                                        "description": "Orden de clasificación",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "is_active": {
+                                        "description": "Estado activo de la categoría",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Categoría actualizada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Categoría actualizada correctamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Category"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Categoría no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Eliminar categoría",
+                "description": "Elimina una categoría existente",
+                "operationId": "ae9111374157094cb7cf60c2472f8b98",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la categoría",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categoría eliminada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Categoría eliminada correctamente"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Categoría no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/categories/tree/list": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Obtener árbol de categorías",
+                "description": "Obtiene la estructura jerárquica de categorías activas",
+                "operationId": "1ed15522c7e4507085814fcc6b905652",
+                "responses": {
+                    "200": {
+                        "description": "Árbol de categorías obtenido exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Árbol de categorías obtenido correctamente"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string",
+                                                        "format": "uuid"
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Electrónicos"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "electronicos"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Productos electrónicos y tecnología"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "https://example.com/category.jpg",
+                                                        "nullable": true
+                                                    },
+                                                    "parent_id": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "nullable": true
+                                                    },
+                                                    "sort_order": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "is_active": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "children": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "$ref": "#/components/schemas/Category"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -8599,41 +10288,19 @@
                         "type": "string",
                         "example": "electronicos"
                     },
-                    "is_active": {
-                        "type": "boolean",
-                        "example": true
-                    },
-                    "created_at": {
+                    "image": {
                         "type": "string",
-                        "format": "date-time"
+                        "example": "https://example.com/category.jpg",
+                        "nullable": true
                     },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time"
-                    }
-                },
-                "type": "object"
-            },
-            "Brand": {
-                "title": "Marca",
-                "description": "Modelo de marca",
-                "properties": {
-                    "id": {
+                    "parent_id": {
                         "type": "string",
                         "format": "uuid",
-                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                        "nullable": true
                     },
-                    "name": {
-                        "type": "string",
-                        "example": "Apple"
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "Empresa líder en tecnología"
-                    },
-                    "slug": {
-                        "type": "string",
-                        "example": "apple"
+                    "sort_order": {
+                        "type": "integer",
+                        "example": 1
                     },
                     "is_active": {
                         "type": "boolean",
@@ -8641,11 +10308,33 @@
                     },
                     "created_at": {
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000000Z"
                     },
                     "updated_at": {
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000000Z"
+                    },
+                    "parent": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Category"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Category"
+                        }
+                    },
+                    "products": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Product"
+                        }
                     }
                 },
                 "type": "object"
@@ -9086,6 +10775,56 @@
                     }
                 },
                 "type": "object"
+            },
+            "Brand": {
+                "title": "Marca",
+                "description": "Modelo de marca",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Apple"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Empresa líder en tecnología e innovación"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "apple"
+                    },
+                    "logo_url": {
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://example.com/logo.png",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000000Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000000Z"
+                    },
+                    "products": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Product"
+                        }
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -9120,6 +10859,18 @@
         {
             "name": "Emails",
             "description": "Endpoints para gestión de emails y notificaciones"
+        },
+        {
+            "name": "Brands",
+            "description": "Endpoints para gestión de marcas de productos"
+        },
+        {
+            "name": "Cart Merge",
+            "description": "Endpoints para fusión de carritos anónimos con carritos de usuarios registrados"
+        },
+        {
+            "name": "Categories",
+            "description": "Endpoints para gestión de categorías de productos"
         },
         {
             "name": "Checkout",

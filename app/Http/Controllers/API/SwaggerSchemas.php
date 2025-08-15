@@ -108,22 +108,27 @@ namespace App\Http\Controllers\API;
  *     @OA\Property(property="name", type="string", example="Electrónicos"),
  *     @OA\Property(property="description", type="string", example="Productos electrónicos y tecnología"),
  *     @OA\Property(property="slug", type="string", example="electronicos"),
+ *     @OA\Property(property="image", type="string", example="https://example.com/category.jpg", nullable=true),
+ *     @OA\Property(property="parent_id", type="string", format="uuid", nullable=true),
+ *     @OA\Property(property="sort_order", type="integer", example=1),
  *     @OA\Property(property="is_active", type="boolean", example=true),
- *     @OA\Property(property="created_at", type="string", format="date-time"),
- *     @OA\Property(property="updated_at", type="string", format="date-time")
- * )
- * 
- * @OA\Schema(
- *     schema="Brand",
- *     title="Marca",
- *     description="Modelo de marca",
- *     @OA\Property(property="id", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000"),
- *     @OA\Property(property="name", type="string", example="Apple"),
- *     @OA\Property(property="description", type="string", example="Empresa líder en tecnología"),
- *     @OA\Property(property="slug", type="string", example="apple"),
- *     @OA\Property(property="is_active", type="boolean", example=true),
- *     @OA\Property(property="created_at", type="string", format="date-time"),
- *     @OA\Property(property="updated_at", type="string", format="date-time")
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T00:00:00.000000Z"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-01T00:00:00.000000Z"),
+ *     @OA\Property(
+ *         property="parent",
+ *         ref="#/components/schemas/Category",
+ *         nullable=true
+ *     ),
+ *     @OA\Property(
+ *         property="children",
+ *         type="array",
+ *         @OA\Items(ref="#/components/schemas/Category")
+ *     ),
+ *     @OA\Property(
+ *         property="products",
+ *         type="array",
+ *         @OA\Items(ref="#/components/schemas/Product")
+ *     )
  * )
  * 
  * @OA\Schema(
@@ -280,6 +285,25 @@ namespace App\Http\Controllers\API;
  *     @OA\Property(property="is_default", type="boolean", example=true),
  *     @OA\Property(property="created_at", type="string", format="date-time"),
  *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ * 
+ * @OA\Schema(
+ *     schema="Brand",
+ *     title="Marca",
+ *     description="Modelo de marca",
+ *     @OA\Property(property="id", type="string", format="uuid", example="550e8400-e29b-41d4-a716-446655440000"),
+ *     @OA\Property(property="name", type="string", example="Apple"),
+ *     @OA\Property(property="description", type="string", example="Empresa líder en tecnología e innovación"),
+ *     @OA\Property(property="slug", type="string", example="apple"),
+ *     @OA\Property(property="logo_url", type="string", format="url", example="https://example.com/logo.png", nullable=true),
+ *     @OA\Property(property="is_active", type="boolean", example=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T00:00:00.000000Z"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-01T00:00:00.000000Z"),
+ *     @OA\Property(
+ *         property="products",
+ *         type="array",
+ *         @OA\Items(ref="#/components/schemas/Product")
+ *     )
  * )
  */
 class SwaggerSchemas

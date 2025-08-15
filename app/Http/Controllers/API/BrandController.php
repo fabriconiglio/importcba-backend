@@ -11,10 +11,78 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
+/**
+ * @OA\Tag(
+ *     name="Brands",
+ *     description="Endpoints para gestión de marcas de productos"
+ * )
+ */
 class BrandController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/v1/brands",
+     *     summary="Listar marcas",
+     *     description="Obtiene una lista paginada de marcas con filtros opcionales",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="active",
+     *         in="query",
+     *         description="Filtrar por estado activo",
+     *         required=false,
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Buscar por nombre o descripción",
+     *         required=false,
+     *         @OA\Schema(type="string", example="Apple")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_by",
+     *         in="query",
+     *         description="Campo para ordenar",
+     *         required=false,
+     *         @OA\Schema(type="string", default="name", enum={"name", "created_at", "updated_at"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_order",
+     *         in="query",
+     *         description="Orden de clasificación",
+     *         required=false,
+     *         @OA\Schema(type="string", default="asc", enum={"asc", "desc"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Número de elementos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=15, minimum=1, maximum=100)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Marcas obtenidas exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Marcas obtenidas correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Brand")),
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="per_page", type="integer", example=15),
+     *                 @OA\Property(property="total", type="integer", example=75)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function index(Request $request): JsonResponse
     {
@@ -58,7 +126,47 @@ class BrandController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *     path="/api/v1/brands",
+     *     summary="Crear marca",
+     *     description="Crea una nueva marca de producto",
+     *     tags={"Brands"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string", maxLength=255, example="Apple", description="Nombre de la marca"),
+     *             @OA\Property(property="description", type="string", maxLength=1000, example="Empresa líder en tecnología", description="Descripción de la marca"),
+     *             @OA\Property(property="logo_url", type="string", format="url", maxLength=500, example="https://example.com/logo.png", description="URL del logo de la marca"),
+     *             @OA\Property(property="is_active", type="boolean", example=true, description="Estado activo de la marca")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Marca creada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Marca creada correctamente"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Brand")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function store(Request $request): JsonResponse
     {
@@ -94,7 +202,38 @@ class BrandController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/v1/brands/{id}",
+     *     summary="Obtener marca específica",
+     *     description="Obtiene los detalles de una marca específica incluyendo sus productos",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID de la marca",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Marca obtenida exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Marca obtenida correctamente"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Brand")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Marca no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function show(string $id): JsonResponse
     {
@@ -122,7 +261,58 @@ class BrandController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     *     path="/api/v1/brands/{id}",
+     *     summary="Actualizar marca",
+     *     description="Actualiza los datos de una marca existente",
+     *     tags={"Brands"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID de la marca",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", maxLength=255, example="Apple Inc.", description="Nombre de la marca"),
+     *             @OA\Property(property="description", type="string", maxLength=1000, example="Empresa líder en tecnología e innovación", description="Descripción de la marca"),
+     *             @OA\Property(property="logo_url", type="string", format="url", maxLength=500, example="https://example.com/new-logo.png", description="URL del logo de la marca"),
+     *             @OA\Property(property="is_active", type="boolean", example=true, description="Estado activo de la marca")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Marca actualizada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Marca actualizada correctamente"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Brand")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Marca no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function update(Request $request, string $id): JsonResponse
     {
@@ -166,7 +356,51 @@ class BrandController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     *     path="/api/v1/brands/{id}",
+     *     summary="Eliminar marca",
+     *     description="Elimina una marca existente (solo si no tiene productos asociados)",
+     *     tags={"Brands"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID de la marca",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Marca eliminada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Marca eliminada correctamente")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Marca no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="No se puede eliminar (tiene productos asociados)",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="No se puede eliminar la marca porque tiene productos asociados")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function destroy(string $id): JsonResponse
     {
@@ -203,7 +437,30 @@ class BrandController extends Controller
     }
 
     /**
-     * Obtener marcas activas para el frontend
+     * @OA\Get(
+     *     path="/api/v1/brands/active/list",
+     *     summary="Obtener marcas activas",
+     *     description="Obtiene todas las marcas activas ordenadas por nombre",
+     *     tags={"Brands"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Marcas activas obtenidas exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Marcas activas obtenidas correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/Brand")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function active(): JsonResponse
     {
@@ -227,7 +484,38 @@ class BrandController extends Controller
     }
 
     /**
-     * Obtener marca por slug
+     * @OA\Get(
+     *     path="/api/v1/brands/slug/{slug}",
+     *     summary="Obtener marca por slug",
+     *     description="Obtiene una marca específica por su slug (solo marcas activas)",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         description="Slug de la marca",
+     *         required=true,
+     *         @OA\Schema(type="string", example="apple")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Marca obtenida exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Marca obtenida correctamente"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Brand")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Marca no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function bySlug(string $slug): JsonResponse
     {
