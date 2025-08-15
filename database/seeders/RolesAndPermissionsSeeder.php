@@ -16,29 +16,29 @@ class RolesAndPermissionsSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Crear permisos para productos
-        Permission::create(['name' => 'view products']);
-        Permission::create(['name' => 'create products']);
-        Permission::create(['name' => 'edit products']);
-        Permission::create(['name' => 'delete products']);
+        Permission::create(['name' => 'view products', 'guard_name' => 'web']);
+        Permission::create(['name' => 'create products', 'guard_name' => 'web']);
+        Permission::create(['name' => 'edit products', 'guard_name' => 'web']);
+        Permission::create(['name' => 'delete products', 'guard_name' => 'web']);
 
         // Crear permisos para pedidos
-        Permission::create(['name' => 'view orders']);
-        Permission::create(['name' => 'create orders']);
-        Permission::create(['name' => 'edit orders']);
-        Permission::create(['name' => 'delete orders']);
+        Permission::create(['name' => 'view orders', 'guard_name' => 'web']);
+        Permission::create(['name' => 'create orders', 'guard_name' => 'web']);
+        Permission::create(['name' => 'edit orders', 'guard_name' => 'web']);
+        Permission::create(['name' => 'delete orders', 'guard_name' => 'web']);
 
         // Crear permisos para usuarios
-        Permission::create(['name' => 'view users']);
-        Permission::create(['name' => 'create users']);
-        Permission::create(['name' => 'edit users']);
-        Permission::create(['name' => 'delete users']);
+        Permission::create(['name' => 'view users', 'guard_name' => 'web']);
+        Permission::create(['name' => 'create users', 'guard_name' => 'web']);
+        Permission::create(['name' => 'edit users', 'guard_name' => 'web']);
+        Permission::create(['name' => 'delete users', 'guard_name' => 'web']);
 
         // Crear rol de administrador
-        $adminRole = Role::create(['name' => 'admin']);
+        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'web']);
         $adminRole->givePermissionTo(Permission::all());
 
         // Crear rol de cliente
-        $customerRole = Role::create(['name' => 'customer']);
+        $customerRole = Role::create(['name' => 'customer', 'guard_name' => 'web']);
         $customerRole->givePermissionTo([
             'view products',
             'create orders',
