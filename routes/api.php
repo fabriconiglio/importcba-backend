@@ -18,6 +18,7 @@ use App\Http\Controllers\API\CartMergeController;
 use App\Http\Controllers\API\StockReservationController;
 use App\Http\Controllers\API\EmailController;
 use App\Http\Controllers\API\DocumentationController;
+use App\Http\Controllers\API\SocialAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -87,11 +88,16 @@ Route::prefix('v1')->group(function () {
         Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
         Route::post('reset-password', [AuthController::class, 'resetPassword']);
         
+        // Rutas de autenticación social
+        Route::get('{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
+        Route::get('{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
+        
         // Rutas protegidas de autenticación
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);
             Route::get('me', [AuthController::class, 'me']);
             Route::put('profile', [AuthController::class, 'updateProfile']);
+            Route::post('{provider}/disconnect', [SocialAuthController::class, 'disconnectProvider']);
         });
     });
 });
