@@ -3,9 +3,9 @@
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    'allowed_origins' => env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000') ? explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000')) : ['http://localhost:3000', 'http://127.0.0.1:3000'],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
-    'max_age' => 0,
-    'supports_credentials' => true,
+    'max_age' => env('CORS_MAX_AGE', 0),
+    'supports_credentials' => env('CORS_SUPPORTS_CREDENTIALS', true),
 ]; 

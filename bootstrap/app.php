@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'token.rate.limit' => \App\Http\Middleware\TokenRateLimit::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
