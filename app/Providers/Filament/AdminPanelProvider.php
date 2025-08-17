@@ -41,6 +41,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                \App\Filament\Widgets\StoreManagementOverview::class,
+                \App\Filament\Widgets\CouponUsageChart::class,
                 \App\Filament\Widgets\Ingresos::class,
                 \App\Filament\Widgets\PedidosPorMes::class,
                 \App\Filament\Widgets\TotalClientes::class,
