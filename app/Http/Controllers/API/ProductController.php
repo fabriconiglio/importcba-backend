@@ -359,7 +359,10 @@ class ProductController extends BaseApiController
                 'images' => $product->images->map(function ($image) {
                     return [
                         'id' => $image->id,
-                        'url' => $image->image_url,
+                        'url' => $image->url,
+                        'thumbnail_url' => $image->thumbnail_url,
+                        'small_url' => $image->small_url,
+                        'medium_url' => $image->medium_url,
                         'is_primary' => $image->is_primary,
                         'alt_text' => $image->alt_text,
                         'sort_order' => $image->sort_order,
@@ -558,6 +561,51 @@ class ProductController extends BaseApiController
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener productos destacados: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get product images
+     */
+    public function images(string $id): JsonResponse
+    {
+        try {
+            $product = Product::with('images')->findOrFail($id);
+
+            $images = $product->images->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'url' => $image->url,
+                    'thumbnail_url' => $image->thumbnail_url,
+                    'small_url' => $image->small_url,
+                    'medium_url' => $image->medium_url,
+                    'is_primary' => $image->is_primary,
+                    'alt_text' => $image->alt_text,
+                    'sort_order' => $image->sort_order,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'images' => $images,
+                    'total_images' => $images->count(),
+                ],
+                'message' => 'Imágenes del producto obtenidas correctamente'
+            ]);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Producto no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener imágenes del producto: ' . $e->getMessage()
             ], 500);
         }
     }

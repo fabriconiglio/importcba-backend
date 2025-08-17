@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
     // Rutas adicionales para productos
     Route::get('products/category/{categorySlug}', [ProductController::class, 'byCategory']);
     Route::get('products/featured/list', [ProductController::class, 'featured']);
+    Route::get('products/{id}/images', [ProductController::class, 'images']);
 
     // =============================================
     // CATÁLOGO SEO-FRIENDLY
