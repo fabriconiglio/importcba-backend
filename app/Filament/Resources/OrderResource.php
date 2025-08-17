@@ -15,6 +15,8 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use App\Models\PaymentMethod;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class OrderResource extends Resource
 {
@@ -121,11 +123,73 @@ class OrderResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('order_number')
                     ->searchable()
-                    ->label('Nro. Pedido'),
+                    ->label('Nro. Pedido')
+                    ->copyable()
+                    ->copyMessage('Número de pedido copiado'),
                 Tables\Columns\TextColumn::make('user.first_name')
                     ->searchable()
-                    ->label('Cliente'),
-                Tables\Columns\SelectColumn::make('status')
+                    ->label('Cliente')
+                    ->description(fn ($record) => $record->user?->email),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Pendiente',
+                        'confirmed' => 'Confirmado',
+                        'processing' => 'Procesando',
+                        'shipped' => 'Enviado',
+                        'delivered' => 'Entregado',
+                        'cancelled' => 'Cancelado',
+                        default => $state,
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'confirmed' => 'info',
+                        'processing' => 'primary',
+                        'shipped' => 'success',
+                        'delivered' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
+                    })
+                    ->label('Estado'),
+                Tables\Columns\TextColumn::make('total_amount')
+                    ->money('ARS')
+                    ->sortable()
+                    ->label('Monto Total')
+                    ->color(fn ($record) => $record->total_amount > 0 ? 'success' : 'danger'),
+                Tables\Columns\TextColumn::make('payment_status')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Pendiente',
+                        'paid' => 'Pagado',
+                        'failed' => 'Fallido',
+                        'refunded' => 'Reembolsado',
+                        default => $state,
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'paid' => 'success',
+                        'failed' => 'danger',
+                        'refunded' => 'info',
+                        default => 'gray',
+                    })
+                    ->label('Estado Pago'),
+                Tables\Columns\TextColumn::make('items_count')
+                    ->counts('items')
+                    ->label('Items')
+                    ->badge(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->label('Fecha Creación'),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->label('Fecha Act.'),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Estado del Pedido')
                     ->options([
                         'pending' => 'Pendiente',
                         'confirmed' => 'Confirmado',
@@ -133,43 +197,101 @@ class OrderResource extends Resource
                         'shipped' => 'Enviado',
                         'delivered' => 'Entregado',
                         'cancelled' => 'Cancelado',
-                    ])
-                    ->label('Estado'),
-                Tables\Columns\TextColumn::make('total_amount')
-                    ->money('ARS')
-                    ->sortable()
-                    ->label('Monto Total'),
-                Tables\Columns\SelectColumn::make('payment_status')
+                    ]),
+                Tables\Filters\SelectFilter::make('payment_status')
+                    ->label('Estado del Pago')
                     ->options([
                         'pending' => 'Pendiente',
                         'paid' => 'Pagado',
                         'failed' => 'Fallido',
                         'refunded' => 'Reembolsado',
+                    ]),
+                Tables\Filters\Filter::make('date_range')
+                    ->form([
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Desde'),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Hasta'),
                     ])
-                    ->label('Estado Pago'),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->label('Fecha Creación'),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->label('Fecha Act.'),
-            ])
-            ->filters([
-                //
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->label('Rango de Fechas'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Ver Detalles'),
+                Tables\Actions\Action::make('change_status')
+                    ->label('Cambiar Estado')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->form([
+                        Forms\Components\Select::make('status')
+                            ->label('Nuevo Estado')
+                            ->options([
+                                'pending' => 'Pendiente',
+                                'confirmed' => 'Confirmado',
+                                'processing' => 'Procesando',
+                                'shipped' => 'Enviado',
+                                'delivered' => 'Entregado',
+                                'cancelled' => 'Cancelado',
+                            ])
+                            ->required(),
+                        Forms\Components\Textarea::make('status_notes')
+                            ->label('Notas del Cambio')
+                            ->placeholder('Motivo del cambio de estado...'),
+                    ])
+                    ->action(function (Order $record, array $data): void {
+                        $record->update([
+                            'status' => $data['status'],
+                            'notes' => $record->notes . "\n\n" . now()->format('d/m/Y H:i') . " - Estado cambiado a: " . $data['status'] . "\nNotas: " . ($data['status_notes'] ?? 'Sin notas'),
+                        ]);
+                    })
+                    ->successNotificationTitle('Estado del pedido actualizado'),
+                Tables\Actions\EditAction::make()
+                    ->label('Editar'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('change_status_bulk')
+                        ->label('Cambiar Estado Masivo')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->form([
+                            Forms\Components\Select::make('status')
+                                ->label('Nuevo Estado')
+                                ->options([
+                                    'pending' => 'Pendiente',
+                                    'confirmed' => 'Confirmado',
+                                    'processing' => 'Procesando',
+                                    'shipped' => 'Enviado',
+                                    'delivered' => 'Entregado',
+                                    'cancelled' => 'Cancelado',
+                                ])
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(function ($record) use ($data) {
+                                $record->update([
+                                    'status' => $data['status'],
+                                    'notes' => $record->notes . "\n\n" . now()->format('d/m/Y H:i') . " - Estado cambiado masivamente a: " . $data['status'],
+                                ]);
+                            });
+                        })
+                        ->successNotificationTitle('Estados de pedidos actualizados masivamente'),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('Eliminar Seleccionados'),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array

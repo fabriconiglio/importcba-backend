@@ -75,26 +75,89 @@ class ItemsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('product.name')->label('Producto'),
-                Tables\Columns\TextColumn::make('quantity')->label('Cantidad'),
-                Tables\Columns\TextColumn::make('unit_price')->money('ARS')->label('Precio Unit.'),
-                Tables\Columns\TextColumn::make('total_price')->money('ARS')->label('Precio Total'),
+                Tables\Columns\ImageColumn::make('product.primary_image_url')
+                    ->label('Imagen')
+                    ->disk('public')
+                    ->height(40)
+                    ->width(40)
+                    ->circular()
+                    ->defaultImageUrl('/images/placeholder-product.png'),
+                Tables\Columns\TextColumn::make('product.name')
+                    ->label('Producto')
+                    ->searchable()
+                    ->description(fn ($record) => $record->product?->sku),
+                Tables\Columns\TextColumn::make('quantity')
+                    ->label('Cantidad')
+                    ->badge()
+                    ->color('primary'),
+                Tables\Columns\TextColumn::make('unit_price')
+                    ->money('ARS')
+                    ->label('Precio Unit.')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('total_price')
+                    ->money('ARS')
+                    ->label('Precio Total')
+                    ->sortable()
+                    ->weight('bold'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Agregado')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([])
+            ->filters([
+                Tables\Filters\Filter::make('price_range')
+                    ->form([
+                        Forms\Components\TextInput::make('min_price')
+                            ->label('Precio mínimo')
+                            ->numeric()
+                            ->prefix('$'),
+                        Forms\Components\TextInput::make('max_price')
+                            ->label('Precio máximo')
+                            ->numeric()
+                            ->prefix('$'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['min_price'],
+                                fn (Builder $query, $price): Builder => $query->where('unit_price', '>=', $price),
+                            )
+                            ->when(
+                                $data['max_price'],
+                                fn (Builder $query, $price): Builder => $query->where('unit_price', '<=', $price),
+                            );
+                    })
+                    ->label('Rango de Precios'),
+            ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Añadir Item')
                     ->createAnother(false),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Ver Detalles'),
+                Tables\Actions\EditAction::make()
+                    ->label('Editar'),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Eliminar')
+                    ->requiresConfirmation()
+                    ->modalHeading('Eliminar item del pedido')
+                    ->modalDescription('¿Estás seguro de que quieres eliminar este item?')
+                    ->modalSubmitActionLabel('Sí, eliminar'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('Eliminar Seleccionados')
+                        ->requiresConfirmation()
+                        ->modalHeading('Eliminar items seleccionados')
+                        ->modalDescription('¿Estás seguro de que quieres eliminar los items seleccionados?'),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'asc')
+            ->paginated(false);
     }
 
     private static function updateTotalPrice(Get $get, Set $set): void
