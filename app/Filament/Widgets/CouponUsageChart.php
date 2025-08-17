@@ -24,9 +24,23 @@ class CouponUsageChart extends ChartWidget
             $date = Carbon::now()->subDays($i);
             $days->push($date->format('d/m'));
             
-            // Datos simulados para evitar errores
-            $usageData->push(rand(0, 5));
-            $revenueData->push(rand(0, 10000));
+            // Usos del día - datos reales
+            try {
+                $dailyUsage = CouponUsage::whereDate('created_at', $date)->count();
+            } catch (\Exception $e) {
+                $dailyUsage = 0;
+            }
+            $usageData->push($dailyUsage);
+            
+            // Ingresos del día - datos reales
+            try {
+                $dailyRevenue = Order::whereDate('created_at', $date)
+                    ->whereNotNull('coupon_id')
+                    ->sum('total_amount') ?? 0;
+            } catch (\Exception $e) {
+                $dailyRevenue = 0;
+            }
+            $revenueData->push($dailyRevenue);
         }
 
         return [
