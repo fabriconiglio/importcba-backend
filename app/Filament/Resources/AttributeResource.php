@@ -63,7 +63,18 @@ class AttributeResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable(),
                 Tables\Columns\TextColumn::make('slug')->label('Slug')->searchable(),
-                Tables\Columns\TextColumn::make('type')->label('Tipo')->sortable(),
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Tipo')
+                    ->sortable()
+                    ->formatStateUsing(function ($state) {
+                        return match($state) {
+                            'text' => 'Texto',
+                            'number' => 'Número',
+                            'color' => 'Color',
+                            'select' => 'Selección',
+                            default => $state
+                        };
+                    }),
                 Tables\Columns\IconColumn::make('is_required')->label('Requerido')->boolean(),
                 Tables\Columns\TextColumn::make('created_at')->label('Creado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')->label('Actualizado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
