@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Str;
 
 class AttributeResource extends Resource
 {
@@ -31,11 +32,16 @@ class AttributeResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->label('Nombre')
                     ->required()
-                    ->maxLength(100),
+                    ->maxLength(100)
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        $set('slug', Str::slug($state));
+                    }),
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
                     ->required()
-                    ->maxLength(100),
+                    ->maxLength(100)
+                    ->unique(ignoreRecord: true),
                 Forms\Components\Select::make('type')
                     ->label('Tipo')
                     ->options([
