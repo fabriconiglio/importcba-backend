@@ -138,6 +138,86 @@ class CouponController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/coupons/public",
+     *     summary="Listar cupones públicos",
+     *     description="Obtiene una lista de cupones activos disponibles públicamente",
+     *     tags={"Coupons"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cupones obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Cupones obtenidos correctamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="code", type="string", example="DESCUENTO20"),
+     *                     @OA\Property(property="name", type="string", example="Descuento 20%"),
+     *                     @OA\Property(property="description", type="string", example="20% de descuento en toda la tienda"),
+     *                     @OA\Property(property="type", type="string", enum={"percentage", "fixed_amount"}, example="percentage"),
+     *                     @OA\Property(property="value", type="number", format="float", example=20.0),
+     *                     @OA\Property(property="minimum_amount", type="number", format="float", example=1000.00),
+     *                     @OA\Property(property="usage_limit", type="integer", example=100),
+     *                     @OA\Property(property="used_count", type="integer", example=45),
+     *                     @OA\Property(property="remaining_uses", type="integer", example=55),
+     *                     @OA\Property(property="starts_at", type="string", format="date-time"),
+     *                     @OA\Property(property="expires_at", type="string", format="date-time")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     */
+    public function publicIndex(): JsonResponse
+    {
+        try {
+            $coupons = Coupon::where('is_active', true)
+                ->where('starts_at', '<=', now())
+                ->where('expires_at', '>', now())
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $transformedCoupons = $coupons->map(function ($coupon) {
+                return [
+                    'id' => $coupon->id,
+                    'code' => $coupon->code,
+                    'name' => $coupon->name ?? 'Cupón de descuento',
+                    'description' => $coupon->description,
+                    'type' => $coupon->type,
+                    'value' => $coupon->value,
+                    'minimum_amount' => $coupon->minimum_amount,
+                    'usage_limit' => $coupon->usage_limit,
+                    'used_count' => $coupon->used_count,
+                    'remaining_uses' => $coupon->usage_limit ? $coupon->usage_limit - $coupon->used_count : null,
+                    'starts_at' => $coupon->starts_at?->toISOString(),
+                    'expires_at' => $coupon->expires_at?->toISOString(),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $transformedCoupons,
+                'message' => 'Cupones obtenidos correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener cupones: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/v1/coupons/validate",
      *     summary="Validar cupón",

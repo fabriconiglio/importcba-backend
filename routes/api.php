@@ -86,6 +86,11 @@ Route::prefix('v1')->group(function () {
     Route::get('payment-methods', [CheckoutController::class, 'paymentMethods']);
     
     // =============================================
+    // CUPONES PÚBLICOS
+    // =============================================
+    Route::get('coupons/public', [CouponController::class, 'publicIndex']);
+    
+    // =============================================
     // AUTENTICACIÓN
     // =============================================
     Route::prefix('auth')->group(function () {
