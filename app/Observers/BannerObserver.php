@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Observers;
+
+use App\Models\Banner;
+use App\Services\ImageService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+
+class BannerObserver
+{
+    /**
+     * Handle the Banner "updated" event.
+     */
+    public function updated(Banner $banner): void
+    {
+        // Verificar si la imagen cambió
+        if ($banner->wasChanged('image_url')) {
+            $this->optimizeImageIfNeeded($banner);
+        }
+    }
+
+    /**
+     * Handle the Banner "deleted" event.
+     */
+    public function deleted(Banner $banner): void
+    {
+        // Eliminar archivo físico de imagen cuando se elimina el banner
+        if ($banner->image_url && Storage::disk('public')->exists($banner->image_url)) {
+            try {
+                Storage::disk('public')->delete($banner->image_url);
+                Log::info("Imagen de banner eliminada: {$banner->image_url}");
+            } catch (\Exception $e) {
+                Log::error("Error eliminando imagen de banner: " . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Optimizar imagen si es necesario
+     */
+    private function optimizeImageIfNeeded(Banner $banner): void
+    {
+        if (!$banner->image_url) {
+            return;
+        }
+
+        try {
+            $imageService = app(ImageService::class);
+            
+            // Optimizar imagen específicamente para banners (1200x675 - 16:9)
+            $optimized = $imageService->optimizeExistingImage(
+                $banner->image_url,
+                1200, // ancho
+                675,  // alto
+                'banners'
+            );
+
+            if ($optimized) {
+                Log::info("Banner image optimized successfully: {$banner->image_url}");
+            }
+        } catch (\Exception $e) {
+            Log::error("Error optimizando imagen de banner {$banner->title}: " . $e->getMessage());
+        }
+    }
+}

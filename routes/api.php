@@ -13,6 +13,7 @@ use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\CouponController;
+use App\Http\Controllers\API\BannerController;
 use App\Http\Controllers\API\AnonymousCartController;
 use App\Http\Controllers\API\CartMergeController;
 use App\Http\Controllers\API\StockReservationController;
@@ -89,6 +90,11 @@ Route::prefix('v1')->group(function () {
     // CUPONES PÚBLICOS
     // =============================================
     Route::get('coupons/public', [CouponController::class, 'publicIndex']);
+    
+    // =============================================
+    // BANNERS PÚBLICOS
+    // =============================================
+    Route::get('banners/public', [BannerController::class, 'publicIndex']);
     
     // =============================================
     // AUTENTICACIÓN

@@ -111,6 +111,14 @@ class ImageService
     }
 
     /**
+     * Optimizar imagen para banners (1200x675, WebP, alta calidad)
+     */
+    public function optimizeForBanner(UploadedFile $file, string $directory = 'banners'): string
+    {
+        return $this->optimizeImageGD($file, $directory, 1200, 675);
+    }
+
+    /**
      * Optimizar imagen usando GD nativo
      */
     private function optimizeImageGD(UploadedFile $file, string $directory, int $width, int $height): string
