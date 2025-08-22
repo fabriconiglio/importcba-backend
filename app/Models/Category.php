@@ -69,6 +69,14 @@ class Category extends Model
         return $this->hasMany(Category::class, 'parent_id');
     }
 
+    // Relación many-to-many con marcas
+    public function brands()
+    {
+        return $this->belongsToMany(Brand::class, 'brand_category')
+                    ->withPivot('is_featured', 'sort_order')
+                    ->orderByPivot('sort_order');
+    }
+
     // Scopes útiles
     public function scopeActive($query)
     {

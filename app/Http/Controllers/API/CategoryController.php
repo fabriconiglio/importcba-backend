@@ -401,9 +401,14 @@ class CategoryController extends Controller
     public function tree(): JsonResponse
     {
         try {
-            $categories = Category::with(['children' => function ($query) {
-                $query->where('is_active', true)->orderBy('sort_order');
-            }])
+            $categories = Category::with([
+                'children' => function ($query) {
+                    $query->where('is_active', true)->orderBy('sort_order');
+                },
+                'brands' => function ($query) {
+                    $query->where('is_active', true)->orderByPivot('sort_order');
+                }
+            ])
             ->where('parent_id', null)
             ->where('is_active', true)
             ->orderBy('sort_order')

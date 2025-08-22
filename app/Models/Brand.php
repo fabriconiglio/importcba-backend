@@ -57,6 +57,14 @@ class Brand extends Model
         return $this->hasMany(Product::class);
     }
 
+    // Relación many-to-many con categorías
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'brand_category')
+                    ->withPivot('is_featured', 'sort_order')
+                    ->orderByPivot('sort_order');
+    }
+
     // Scopes útiles
     public function scopeActive($query)
     {

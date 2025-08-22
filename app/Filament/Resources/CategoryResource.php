@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CategoryResource\Pages;
 use App\Filament\Resources\CategoryResource\RelationManagers;
 use App\Models\Category;
+use App\Models\Brand;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -54,7 +55,13 @@ class CategoryResource extends Resource
                     ->directory('categories')
                     ->disk('public')
                     ->visibility('public')
-                    ->maxSize(2048),
+                    ->maxSize(1024) // Reducir a 1MB
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('1:1')
+                    ->imageResizeTargetWidth('400')
+                    ->imageResizeTargetHeight('400')
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->helperText('Imagen cuadrada recomendada. Se redimensionará automáticamente a 400x400px.'),
                 Forms\Components\Toggle::make('is_active')
                     ->label('Activo')
                     ->default(true),
@@ -62,6 +69,22 @@ class CategoryResource extends Resource
                     ->label('Orden')
                     ->numeric()
                     ->default(0),
+                
+                Forms\Components\Section::make('Marcas Asociadas')
+                    ->description('Selecciona las marcas que pertenecen a esta categoría')
+                    ->schema([
+                        Forms\Components\CheckboxList::make('brands')
+                            ->label('Marcas')
+                            ->relationship('brands', 'name')
+                            ->options(Brand::where('is_active', true)->pluck('name', 'id'))
+                            ->columns(3)
+                            ->searchable()
+                            ->bulkToggleable()
+                            ->gridDirection('row')
+                            ->hint('Puedes seleccionar múltiples marcas para esta categoría'),
+                    ])
+                    ->collapsible()
+                    ->collapsed(false),
             ]);
     }
 
@@ -77,8 +100,17 @@ class CategoryResource extends Resource
                     ->disk('public')
                     ->height(40)
                     ->width(40)
-                    ->defaultImageUrl('/images/no-image.png'),
+                    ->square()
+                    ->defaultImageUrl('/images/no-image.png')
+                    ->extraAttributes(['loading' => 'lazy'])
+                    ->checkFileExistence(false), // Mejora performance
                 Tables\Columns\IconColumn::make('is_active')->label('Activo')->boolean(),
+                Tables\Columns\TextColumn::make('brands_count')
+                    ->label('Marcas')
+                    ->counts('brands')
+                    ->badge()
+                    ->color('primary')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('sort_order')->label('Orden')->sortable(),
                 Tables\Columns\TextColumn::make('created_at')->label('Creado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')->label('Actualizado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
@@ -99,7 +131,7 @@ class CategoryResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\BrandsRelationManager::class,
         ];
     }
 

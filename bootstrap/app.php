@@ -22,9 +22,15 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
 
+        // Agregar middleware de cache para archivos estáticos
+        $middleware->web(append: [
+            \App\Http\Middleware\CacheControlMiddleware::class,
+        ]);
+
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'token.rate.limit' => \App\Http\Middleware\TokenRateLimit::class,
+            'cache.control' => \App\Http\Middleware\CacheControlMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
