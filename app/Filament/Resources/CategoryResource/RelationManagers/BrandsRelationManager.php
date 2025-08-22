@@ -90,7 +90,7 @@ class BrandsRelationManager extends RelationManager
                     ->falseLabel('Solo no destacadas')
                     ->placeholder('Todas'),
             ])
-            ->defaultSort('pivot.sort_order')
+            ->defaultSort('brand_category.sort_order')
             ->headerActions([
                 Tables\Actions\AttachAction::make()
                     ->label('Asociar marca')

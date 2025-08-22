@@ -18,7 +18,7 @@ class CacheControlMiddleware
         $response = $next($request);
 
         // Solo aplicar cache a archivos estáticos
-        if ($request->is('storage/*')) {
+        if ($request->is('storage/*') || $request->is('*/storage/*')) {
             $response->headers->set('Cache-Control', 'public, max-age=31536000'); // 1 año
             $response->headers->set('Expires', gmdate('D, d M Y H:i:s \G\M\T', time() + 31536000));
             

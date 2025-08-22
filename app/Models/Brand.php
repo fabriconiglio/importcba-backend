@@ -62,7 +62,7 @@ class Brand extends Model
     {
         return $this->belongsToMany(Category::class, 'brand_category')
                     ->withPivot('is_featured', 'sort_order')
-                    ->orderByPivot('sort_order');
+                    ->orderBy('brand_category.sort_order');
     }
 
     // Scopes útiles

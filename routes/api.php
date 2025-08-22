@@ -80,6 +80,12 @@ Route::prefix('v1')->group(function () {
     Route::get('brands/slug/{slug}', [BrandController::class, 'bySlug']);
     
     // =============================================
+    // MÉTODOS DE ENVÍO Y PAGO (PÚBLICOS)
+    // =============================================
+    Route::get('shipping-methods', [CheckoutController::class, 'shippingMethods']);
+    Route::get('payment-methods', [CheckoutController::class, 'paymentMethods']);
+    
+    // =============================================
     // AUTENTICACIÓN
     // =============================================
     Route::prefix('auth')->group(function () {
@@ -127,8 +133,6 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('initiate', [CheckoutController::class, 'initiate']);
         Route::post('calculate', [CheckoutController::class, 'calculate']);
         Route::post('confirm', [CheckoutController::class, 'confirm']);
-        Route::get('shipping-methods', [CheckoutController::class, 'shippingMethods']);
-        Route::get('payment-methods', [CheckoutController::class, 'paymentMethods']);
         Route::post('validate-coupon', [CheckoutController::class, 'validateCoupon']);
     });
     

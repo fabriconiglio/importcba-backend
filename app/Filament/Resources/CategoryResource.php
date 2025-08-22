@@ -13,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CategoryResource extends Resource
@@ -49,19 +50,36 @@ class CategoryResource extends Resource
                     ->relationship('parent', 'name')
                     ->searchable()
                     ->nullable(),
-                Forms\Components\FileUpload::make('image_url')
-                    ->label('Imagen')
-                    ->image()
-                    ->directory('categories')
-                    ->disk('public')
-                    ->visibility('public')
-                    ->maxSize(1024) // Reducir a 1MB
-                    ->imageResizeMode('cover')
-                    ->imageCropAspectRatio('1:1')
-                    ->imageResizeTargetWidth('400')
-                    ->imageResizeTargetHeight('400')
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                    ->helperText('Imagen cuadrada recomendada. Se redimensionará automáticamente a 400x400px.'),
+                Forms\Components\Group::make([
+                    Forms\Components\FileUpload::make('image_url')
+                        ->label('Imagen')
+                        ->directory('categories')
+                        ->disk('public')
+                        ->visibility('public')
+                        ->maxSize(2048)
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                        ->previewable(false)
+                        ->downloadable(false)
+                        ->openable(false)
+                        ->deletable(true)
+                        ->multiple(false)
+                        ->helperText('Imagen para la categoría. Máximo 2MB. Formatos: JPG, PNG, WebP')
+                        ->columnSpan(1),
+                    
+                    Forms\Components\Placeholder::make('image_preview')
+                        ->label('Vista previa actual')
+                        ->content(function ($record) {
+                            if ($record && $record->image_url) {
+                                $url = Storage::url($record->image_url);
+                                return new \Illuminate\Support\HtmlString(
+                                    '<img src="' . $url . '" style="max-width: 150px; max-height: 150px; object-fit: cover; border-radius: 8px;" alt="Imagen de categoría">'
+                                );
+                            }
+                            return 'No hay imagen';
+                        })
+                        ->columnSpan(1)
+                        ->visible(fn ($record) => $record && $record->image_url),
+                ])->columns(2),
                 Forms\Components\Toggle::make('is_active')
                     ->label('Activo')
                     ->default(true),
@@ -98,12 +116,13 @@ class CategoryResource extends Resource
                 Tables\Columns\ImageColumn::make('image_url')
                     ->label('Imagen')
                     ->disk('public')
-                    ->height(40)
-                    ->width(40)
+                    ->height(30)
+                    ->width(30)
                     ->square()
                     ->defaultImageUrl('/images/no-image.png')
-                    ->extraAttributes(['loading' => 'lazy'])
-                    ->checkFileExistence(false), // Mejora performance
+                    ->extraAttributes(['loading' => 'lazy', 'style' => 'object-fit: cover;'])
+                    ->checkFileExistence(false)
+                    ->visibility('public'), // Especificar visibilidad
                 Tables\Columns\IconColumn::make('is_active')->label('Activo')->boolean(),
                 Tables\Columns\TextColumn::make('brands_count')
                     ->label('Marcas')
