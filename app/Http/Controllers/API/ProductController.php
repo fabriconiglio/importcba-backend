@@ -530,7 +530,7 @@ class ProductController extends BaseApiController
     public function featured(): JsonResponse
     {
         try {
-            $products = Product::with(['category', 'brand', 'primaryImage'])
+            $products = Product::with(['category', 'brand', 'images'])
                 ->active()
                 ->featured()
                 ->latest()
@@ -542,12 +542,31 @@ class ProductController extends BaseApiController
                     'id' => $product->id,
                     'name' => $product->name,
                     'slug' => $product->slug,
+                    'sku' => $product->sku,
+                    'description' => $product->description,
+                    'short_description' => $product->short_description,
                     'price' => $product->price,
                     'sale_price' => $product->sale_price,
+                    'original_price' => $product->price, // Para el cálculo de descuento
+                    'stock_quantity' => $product->stock_quantity,
+                    'is_featured' => $product->is_featured,
+                    'category' => $product->category ? [
+                        'id' => $product->category->id,
+                        'name' => $product->category->name,
+                        'slug' => $product->category->slug,
+                    ] : null,
+                    'brand' => $product->brand ? [
+                        'id' => $product->brand->id,
+                        'name' => $product->brand->name,
+                        'slug' => $product->brand->slug,
+                    ] : null,
                     'image' => $product->primary_image_url,
-                    'category' => $product->category->name ?? null,
-                    'in_stock' => $product->isInStock(),
+                    'images' => $product->getImageUrls(),
+                    'effective_price' => $product->getEffectivePrice(),
                     'has_discount' => $product->hasDiscount(),
+                    'discount_percentage' => $product->getDiscountPercentage(),
+                    'in_stock' => $product->isInStock(),
+                    'low_stock' => $product->hasLowStock(),
                 ];
             });
 

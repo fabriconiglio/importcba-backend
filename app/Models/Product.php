@@ -225,9 +225,19 @@ class Product extends Model
      */
     public function getPrimaryImageUrlAttribute(): ?string
     {
-        return $this->primaryImage?->url
-            ?? $this->images()->orderBy('sort_order')->value('url')
-            ?? '/images/placeholder-product.png';
+        $imageUrl = $this->primaryImage?->url
+            ?? $this->images()->orderBy('sort_order')->value('url');
+            
+        if ($imageUrl) {
+            // Si la URL ya es completa, la devolvemos tal como está
+            if (str_starts_with($imageUrl, 'http')) {
+                return $imageUrl;
+            }
+            // Si es una ruta relativa, la construimos con storage
+            return $imageUrl;
+        }
+        
+        return '/images/placeholder-product.png';
     }
 
     /**
