@@ -20,6 +20,7 @@ use App\Http\Controllers\API\StockReservationController;
 use App\Http\Controllers\API\EmailController;
 use App\Http\Controllers\API\DocumentationController;
 use App\Http\Controllers\API\SocialAuthController;
+use App\Http\Controllers\API\NewsletterController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +96,12 @@ Route::prefix('v1')->group(function () {
     // BANNERS PÚBLICOS
     // =============================================
     Route::get('banners/public', [BannerController::class, 'publicIndex']);
+    
+    // =============================================
+    // NEWSLETTER PÚBLICO
+    // =============================================
+    Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe']);
+    Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);
     
     // =============================================
     // AUTENTICACIÓN
@@ -242,6 +249,11 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('health', [DocumentationController::class, 'health']);
         Route::get('endpoints', [DocumentationController::class, 'endpoints']);
     });
+    
+    // =============================================
+    // NEWSLETTER (ADMIN)
+    // =============================================
+    Route::get('newsletter/stats', [NewsletterController::class, 'stats']);
     
     // =============================================
     // FAVORITOS (para futuro)
