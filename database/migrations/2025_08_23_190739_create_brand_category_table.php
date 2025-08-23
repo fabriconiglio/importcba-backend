@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('brand_category', function (Blueprint $table) {
-            // Agregar las columnas necesarias
+        Schema::create('brand_category', function (Blueprint $table) {
+            $table->id();
             $table->uuid('brand_id');
             $table->uuid('category_id');
-            $table->boolean('is_featured')->default(false); // Para destacar ciertas marcas en categorías
-            $table->integer('sort_order')->default(0); // Para ordenar las marcas en cada categoría
+            $table->boolean('is_featured')->default(false);
+            $table->integer('sort_order')->default(0);
+            $table->timestamps();
 
             // Claves foráneas
             $table->foreign('brand_id')->references('id')->on('brands')->onDelete('cascade');
@@ -36,16 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('brand_category', function (Blueprint $table) {
-            // Eliminar índices y claves foráneas primero
-            $table->dropForeign(['brand_id']);
-            $table->dropForeign(['category_id']);
-            $table->dropUnique(['brand_id', 'category_id']);
-            $table->dropIndex(['category_id', 'is_featured', 'sort_order']);
-            $table->dropIndex(['brand_id']);
-            
-            // Eliminar las columnas
-            $table->dropColumn(['brand_id', 'category_id', 'is_featured', 'sort_order']);
-        });
+        Schema::dropIfExists('brand_category');
     }
 };
