@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class BrandResource extends Resource
 {
@@ -45,14 +46,36 @@ class BrandResource extends Resource
                 Forms\Components\Textarea::make('description')
                     ->label('Descripción'),
                 
-                // Campo del logo con vista previa
-                Forms\Components\FileUpload::make('logo_url')
-                    ->label('Logo')
-                    ->image()
-                    ->directory('brands')
-                    ->disk('public')
-                    ->visibility('public')
-                    ->maxSize(2048),
+                Forms\Components\Group::make([
+                    Forms\Components\FileUpload::make('logo_url')
+                        ->label('Logo')
+                        ->directory('brands')
+                        ->disk('public')
+                        ->visibility('public')
+                        ->maxSize(2048)
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                        ->previewable(false)
+                        ->downloadable(false)
+                        ->openable(false)
+                        ->deletable(true)
+                        ->multiple(false)
+                        ->helperText('Logo de la marca. Máximo 2MB. Formatos: JPG, PNG, WebP')
+                        ->columnSpan(1),
+                    
+                    Forms\Components\Placeholder::make('logo_preview')
+                        ->label('Vista previa actual')
+                        ->content(function ($record) {
+                            if ($record && $record->logo_url) {
+                                $url = Storage::url($record->logo_url);
+                                return new \Illuminate\Support\HtmlString(
+                                    '<img src="' . $url . '" style="max-width: 150px; max-height: 150px; object-fit: cover; border-radius: 8px;" alt="Logo de marca">'
+                                );
+                            }
+                            return 'No hay logo';
+                        })
+                        ->columnSpan(1)
+                        ->visible(fn ($record) => $record && $record->logo_url),
+                ])->columns(2),
                 
                 Forms\Components\Toggle::make('is_active')
                     ->label('Activo')
