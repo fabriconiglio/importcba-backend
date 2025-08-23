@@ -57,13 +57,13 @@ class CategoryResource extends Resource
                         ->disk('public')
                         ->visibility('public')
                         ->maxSize(2048)
-                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                        ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
                         ->previewable(false)
                         ->downloadable(false)
                         ->openable(false)
                         ->deletable(true)
                         ->multiple(false)
-                        ->helperText('Imagen para la categoría. Máximo 2MB. Formatos: JPG, PNG, WebP')
+                        ->helperText('Imagen para la categoría. Máximo 2MB. Formatos: JPG, PNG, WebP, GIF, SVG')
                         ->columnSpan(1),
                     
                     Forms\Components\Placeholder::make('image_preview')

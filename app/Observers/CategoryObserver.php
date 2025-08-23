@@ -10,12 +10,22 @@ use Illuminate\Support\Facades\Log;
 class CategoryObserver
 {
     /**
+     * Handle the Category "created" event.
+     */
+    public function created(Category $category): void
+    {
+        if ($category->image_url) {
+            $this->optimizeImageIfNeeded($category);
+        }
+    }
+
+    /**
      * Handle the Category "updated" event.
      */
     public function updated(Category $category): void
     {
-        // Solo optimizar si la imagen cambió y no es ya un WebP
-        if ($category->wasChanged('image_url') && $category->image_url) {
+        // Verificar si la imagen cambió
+        if ($category->wasChanged('image_url')) {
             $this->optimizeImageIfNeeded($category);
         }
     }
@@ -32,26 +42,37 @@ class CategoryObserver
     }
 
     /**
-     * Optimizar imagen si no está ya optimizada
+     * Optimizar imagen si es necesario
      */
     private function optimizeImageIfNeeded(Category $category): void
     {
-        if (!$category->image_url || str_ends_with($category->image_url, '.webp')) {
-            return; // Ya optimizada o no hay imagen
+        if (!$category->image_url) {
+            return;
         }
 
         try {
+            $originalUrl = $category->image_url;
             $imageService = app(ImageService::class);
-            $optimized = $imageService->optimizeExistingImage($category->image_url);
             
+            // Optimizar imagen específicamente para categorías
+            $optimized = $imageService->optimizeExistingImage(
+                $category->image_url,
+                400, // ancho
+                400, // alto
+                'categories'
+            );
+
             if ($optimized) {
-                // Actualizar ruta a WebP
-                $webpPath = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $category->image_url);
+                // Verificar si se creó un archivo WebP
+                $webpUrl = preg_replace('/\.(jpg|jpeg|png|gif)$/i', '.webp', $originalUrl);
                 
-                if (Storage::disk('public')->exists($webpPath)) {
-                    $category->update(['image_url' => $webpPath]);
-                    Log::info("Imagen de categoría optimizada automáticamente: {$category->name}");
+                if ($webpUrl !== $originalUrl && Storage::disk('public')->exists($webpUrl)) {
+                    // Actualizar la URL en la base de datos sin disparar eventos
+                    $category->updateQuietly(['image_url' => $webpUrl]);
+                    Log::info("Category image URL updated to WebP: {$webpUrl}");
                 }
+                
+                Log::info("Category image optimized successfully: {$category->image_url}");
             }
         } catch (\Exception $e) {
             Log::error("Error optimizando imagen de categoría {$category->name}: " . $e->getMessage());

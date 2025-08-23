@@ -53,13 +53,13 @@ class BrandResource extends Resource
                         ->disk('public')
                         ->visibility('public')
                         ->maxSize(2048)
-                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                        ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
                         ->previewable(false)
                         ->downloadable(false)
                         ->openable(false)
                         ->deletable(true)
                         ->multiple(false)
-                        ->helperText('Logo de la marca. Máximo 2MB. Formatos: JPG, PNG, WebP')
+                        ->helperText('Logo de la marca. Máximo 2MB. Formatos: JPG, PNG, WebP, GIF, SVG')
                         ->columnSpan(1),
                     
                     Forms\Components\Placeholder::make('logo_preview')

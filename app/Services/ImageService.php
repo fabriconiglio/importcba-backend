@@ -190,7 +190,7 @@ class ImageService
             $optimizedImage = $this->resizeAndCrop($sourceImage, $maxWidth, $maxHeight);
 
             // Crear nueva ruta WebP
-            $webpPath = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $filePath);
+            $webpPath = preg_replace('/\.(jpg|jpeg|png|gif)$/i', '.webp', $filePath);
             
             // Guardar como WebP
             $tempPath = tempnam(sys_get_temp_dir(), 'webp_');
@@ -233,6 +233,8 @@ class ImageService
                 return imagecreatefrompng($filePath);
             case 'image/webp':
                 return imagecreatefromwebp($filePath);
+            case 'image/gif':
+                return imagecreatefromgif($filePath);
             default:
                 return false;
         }

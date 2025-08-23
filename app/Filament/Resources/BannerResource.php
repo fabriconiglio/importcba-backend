@@ -59,14 +59,14 @@ class BannerResource extends Resource
                                     ->imageResizeTargetWidth(1200)
                                     ->imageResizeTargetHeight(675)
                                     ->maxSize(2048)
-                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
                                     ->previewable(false)
                                     ->downloadable(false)
                                     ->openable(false)
                                     ->deletable(true)
                                     ->multiple(false)
                                     ->required()
-                                    ->helperText('Recomendado: 1200x675px o proporción 16:9. Máximo 2MB.')
+                                    ->helperText('Recomendado: 1200x675px o proporción 16:9. Máximo 2MB. Formatos: JPG, PNG, WebP, GIF, SVG')
                                     ->columnSpan(1),
 
                                 Forms\Components\Placeholder::make('image_preview')
