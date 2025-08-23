@@ -83,10 +83,10 @@ class FixImageUrls extends Command
                 $this->warn("🔍 Found {$fixed} image URLs that need fixing.");
                 $this->info("Run without --dry-run to apply changes.");
             } else {
-                $this->success("✅ Fixed {$fixed} image URLs successfully!");
+                $this->info("✅ Fixed {$fixed} image URLs successfully!");
             }
         } else {
-            $this->success("✅ All image URLs are correct!");
+            $this->info("✅ All image URLs are correct!");
         }
     }
 
