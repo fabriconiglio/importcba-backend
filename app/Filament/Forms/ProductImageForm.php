@@ -10,7 +10,7 @@ class ProductImageForm
     public static function schema(): array
     {
         return [
-            Forms\Components\FileUpload::make('image')
+            Forms\Components\FileUpload::make('url')
                 ->label('Imagen')
                 ->image()
                 ->imageEditor()
@@ -21,8 +21,9 @@ class ProductImageForm
                 ->disk('public')
                 ->visibility('public')
                 ->maxSize(2048)
+                ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'])
                 ->required()
-                ->helperText('Formatos permitidos: JPG, PNG, GIF. Máximo 2MB.'),
+                ->helperText('Formatos permitidos: JPG, PNG, WebP, GIF. Máximo 2MB.'),
             
             Forms\Components\TextInput::make('alt_text')
                 ->label('Texto alternativo')

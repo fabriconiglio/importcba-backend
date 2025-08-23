@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Brand;
+use App\Models\ProductImage;
 use Illuminate\Support\Facades\Storage;
 
 class FixImageUrls extends Command
@@ -73,6 +74,19 @@ class FixImageUrls extends Command
                     $brand->updateQuietly(['logo_url' => $fixedUrl]);
                 }
                 $this->line("  ✅ {$brand->name}: {$brand->logo_url} → {$fixedUrl}");
+                $fixed++;
+            }
+        }
+
+        // Fix Product Images
+        $this->info('🖼️  Checking Product Images...');
+        foreach (ProductImage::whereNotNull('url')->get() as $productImage) {
+            $fixedUrl = $this->checkAndFixImageUrl($productImage->url, 'products');
+            if ($fixedUrl && $fixedUrl !== $productImage->url) {
+                if (!$dryRun) {
+                    $productImage->updateQuietly(['url' => $fixedUrl]);
+                }
+                $this->line("  ✅ Product Image ID {$productImage->id}: {$productImage->url} → {$fixedUrl}");
                 $fixed++;
             }
         }
