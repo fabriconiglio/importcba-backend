@@ -48,9 +48,13 @@ class PaymentMethodSeeder extends Seeder
                 'type' => 'bank_transfer',
                 'is_active' => true,
                 'configuration' => [
-                    'bank_name' => 'Banco Ejemplo',
-                    'account_number' => '1234567890',
-                    'routing_number' => '987654321',
+                    'bank_name' => 'Banco Galicia',
+                    'account_holder' => 'Import CBA Mayorista S.R.L.',
+                    'document_number' => '35581839',
+                    'account_number' => '0002348-3 355-9',
+                    'cbu' => '0070355820000002348391',
+                    'cuil' => '20355818390',
+                    'alias' => 'Importcba',
                 ],
             ],
             [
