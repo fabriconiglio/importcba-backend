@@ -37,9 +37,9 @@ class ImagesRelationManager extends RelationManager
                 ImageColumn::make('url')
                     ->label('Imagen')
                     ->disk('public')
-                    ->height(60)
-                    ->width(60)
-                    ->circular()
+                    ->height(80)
+                    ->width(80)
+                    ->square()
                     ->defaultImageUrl('/images/placeholder-product.png'),
                 
                 TextColumn::make('alt_text')
