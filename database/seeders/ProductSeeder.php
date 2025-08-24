@@ -10,6 +10,7 @@ use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\ProductAttribute;
 use Faker\Factory as Faker;
+use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
@@ -90,8 +91,8 @@ class ProductSeeder extends Seeder
 
         $product = Product::create([
             'name' => $productData['name'],
-            'slug' => \Str::slug($productData['name']) . '-' . \Str::random(4),
-            'sku' => 'SKU-' . strtoupper(\Str::random(8)),
+            'slug' => Str::slug($productData['name']) . '-' . Str::random(4),
+            'sku' => 'SKU-' . strtoupper(Str::random(8)),
             'description' => "Producto de alta calidad. {$faker->sentence(10)}",
             'short_description' => "Excelente producto para el hogar",
             'category_id' => $category->id,
