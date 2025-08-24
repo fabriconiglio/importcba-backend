@@ -162,8 +162,8 @@ class CategoryController extends Controller
     /**
      * @OA\Get(
      *     path="/api/v1/categories/{id}",
-     *     summary="Obtener categoría específica",
-     *     description="Obtiene los detalles de una categoría específica incluyendo sus subcategorías y productos",
+     *     summary="Obtener categoría específica por ID",
+     *     description="Obtiene los detalles de una categoría específica por su ID incluyendo sus subcategorías y productos",
      *     tags={"Categories"},
      *     @OA\Parameter(
      *         name="id",
@@ -198,6 +198,70 @@ class CategoryController extends Controller
         try {
             $category = Category::with(['parent', 'children', 'products'])
                 ->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $category,
+                'message' => 'Categoría obtenida correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener categoría: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/categories/slug/{slug}",
+     *     summary="Obtener categoría específica por slug",
+     *     description="Obtiene los detalles de una categoría específica por su slug incluyendo sus subcategorías y productos",
+     *     tags={"Categories"},
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         description="Slug de la categoría",
+     *         required=true,
+     *         @OA\Schema(type="string", example="bazar")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Categoría obtenida exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Categoría obtenida correctamente"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Category")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Categoría no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Error interno del servidor",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     */
+    public function bySlug(string $slug): JsonResponse
+    {
+        try {
+            $category = Category::with(['parent', 'children', 'products'])
+                ->where('slug', $slug)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$category) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Categoría no encontrada'
+                ], 404);
+            }
 
             return response()->json([
                 'success' => true,

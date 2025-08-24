@@ -73,6 +73,7 @@ Route::prefix('v1')->group(function () {
     // =============================================
     Route::apiResource('categories', CategoryController::class);
     Route::get('categories/tree/list', [CategoryController::class, 'tree']);
+    Route::get('categories/slug/{slug}', [CategoryController::class, 'bySlug']);
     
     // =============================================
     // MARCAS
