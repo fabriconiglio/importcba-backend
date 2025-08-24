@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function () {
         Route::get('category/{categorySlug}', [CatalogController::class, 'byCategory']);
         Route::get('brand/{brandSlug}', [CatalogController::class, 'byBrand']);
         Route::get('category/{categorySlug}/brand/{brandSlug}', [CatalogController::class, 'byCategoryAndBrand']);
+        Route::get('category/{categorySlug}/subcategory/{subcategorySlug}', [CatalogController::class, 'bySubcategory']);
     });
 
     // Rutas para imágenes de productos

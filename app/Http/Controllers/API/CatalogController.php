@@ -544,6 +544,197 @@ class CatalogController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/catalog/category/{categorySlug}/subcategory/{subcategorySlug}",
+     *     summary="Productos por subcategoría",
+     *     description="Obtiene productos filtrados por slug de categoría y subcategoría con opciones de búsqueda y ordenamiento",
+     *     tags={"Catálogo"},
+     *     @OA\Parameter(
+     *         name="categorySlug",
+     *         in="path",
+     *         description="Slug de la categoría padre",
+     *         required=true,
+     *         @OA\Schema(type="string", example="termicos")
+     *     ),
+     *     @OA\Parameter(
+     *         name="subcategorySlug",
+     *         in="path",
+     *         description="Slug de la subcategoría",
+     *         required=true,
+     *         @OA\Schema(type="string", example="conservadoras")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Productos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="brand_id",
+     *         in="query",
+     *         description="ID de marca para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_min",
+     *         in="query",
+     *         description="Precio mínimo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=100.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_max",
+     *         in="query",
+     *         description="Precio máximo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=1000.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Ordenamiento",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"newest", "oldest", "price_asc", "price_desc", "name_asc", "name_desc"},
+     *             example="newest"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Productos obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Productos obtenidos exitosamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="category",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Térmicos"),
+     *                     @OA\Property(property="slug", type="string", example="termicos"),
+     *                     @OA\Property(property="description", type="string", example="Productos térmicos y conservadores")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="subcategory",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="string", format="uuid"),
+     *                     @OA\Property(property="name", type="string", example="Conservadoras"),
+     *                     @OA\Property(property="slug", type="string", example="conservadoras"),
+     *                     @OA\Property(property="description", type="string", example="Conservadoras y termos")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="products",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Product")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="pagination",
+     *                     ref="#/components/schemas/PaginationResponse"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Categoría o subcategoría no encontrada",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     */
+    public function bySubcategory(string $categorySlug, string $subcategorySlug, Request $request): JsonResponse
+    {
+        try {
+            // Buscar la categoría padre por slug
+            $category = Category::where('slug', $categorySlug)
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            // Buscar la subcategoría por slug
+            $subcategory = Category::where('slug', $subcategorySlug)
+                ->where('is_active', true)
+                ->where('parent_id', $category->id)
+                ->firstOrFail();
+
+            $query = Product::with(['category', 'brand', 'primaryImage', 'images'])
+                ->where('category_id', $subcategory->id)
+                ->active();
+
+            // Aplicar filtros adicionales
+            $this->applyFilters($query, $request);
+
+            // Aplicar ordenamiento
+            $this->applySorting($query, $request);
+
+            // Paginación
+            $perPage = (int) $request->get('per_page', 15);
+            $products = $query->paginate($perPage);
+
+            // Transformar productos
+            $products->getCollection()->transform(function ($product) {
+                return $this->transformProduct($product);
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'products' => $products->items(),
+                    'pagination' => [
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'per_page' => $products->perPage(),
+                        'total' => $products->total(),
+                        'from' => $products->firstItem(),
+                        'to' => $products->lastItem(),
+                    ],
+                    'category' => [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                        'description' => $category->description,
+                        'image' => $category->image,
+                    ],
+                    'subcategory' => [
+                        'id' => $subcategory->id,
+                        'name' => $subcategory->name,
+                        'slug' => $subcategory->slug,
+                        'description' => $subcategory->description,
+                        'image' => $subcategory->image,
+                    ],
+                    'filters' => [
+                        'applied' => $this->getAppliedFilters($request),
+                        'available' => $this->getAvailableFilters($subcategory->id),
+                    ]
+                ],
+                'message' => "Productos de '{$category->name}' - '{$subcategory->name}' obtenidos correctamente"
+            ]);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Categoría o subcategoría no encontrada'
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener productos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Apply filters to the query
      */
     private function applyFilters($query, Request $request): void
