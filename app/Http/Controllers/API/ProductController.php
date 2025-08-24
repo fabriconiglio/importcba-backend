@@ -131,6 +131,16 @@ class ProductController extends BaseApiController
                 $query->where('category_id', $request->category_id);
             }
 
+            // Filtro por slug de categoría (incluyendo subcategorías)
+            if ($request->has('category')) {
+                $query->whereHas('category', function ($q) use ($request) {
+                    $q->where('slug', $request->category)
+                      ->orWhereHas('parent', function ($parentQuery) use ($request) {
+                          $parentQuery->where('slug', $request->category);
+                      });
+                });
+            }
+
             if ($request->has('brand_id')) {
                 $query->where('brand_id', $request->brand_id);
             }
