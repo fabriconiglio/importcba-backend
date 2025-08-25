@@ -636,6 +636,9 @@ class CheckoutController extends Controller
                     ]);
                 }
 
+                // Guardar dirección como principal si es la primera compra del usuario
+                $this->saveUserAddressIfFirstOrder($user, $request->shipping_address);
+
                 // Limpiar carrito
                 $cart->items()->delete();
                 $cart->delete();
@@ -949,5 +952,31 @@ class CheckoutController extends Controller
         $random = strtoupper(substr(md5(uniqid()), 0, 6));
         
         return "{$prefix}-{$timestamp}-{$random}";
+    }
+
+    /**
+     * Guardar dirección del usuario si es su primera compra
+     */
+    private function saveUserAddressIfFirstOrder($user, array $shippingAddress): void
+    {
+        // Verificar si el usuario ya tiene direcciones guardadas
+        $existingAddressesCount = Address::where('user_id', $user->id)->count();
+        
+        if ($existingAddressesCount === 0) {
+            // Primera compra - guardar dirección como principal
+            Address::create([
+                'user_id' => $user->id,
+                'type' => 'shipping',
+                'is_default' => true,
+                'first_name' => $shippingAddress['first_name'] ?? '',
+                'last_name' => $shippingAddress['last_name'] ?? '',
+                'street_address' => $shippingAddress['street_address'] ?? '',
+                'city' => $shippingAddress['city'] ?? '',
+                'state' => $shippingAddress['state'] ?? '',
+                'postal_code' => $shippingAddress['postal_code'] ?? '',
+                'country' => $shippingAddress['country'] ?? 'Argentina',
+                'phone' => $shippingAddress['phone'] ?? null,
+            ]);
+        }
     }
 }

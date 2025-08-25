@@ -7,6 +7,8 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ViewOrder extends ViewRecord
 {
@@ -23,12 +25,14 @@ class ViewOrder extends ViewRecord
                 ->label('Imprimir')
                 ->icon('heroicon-o-printer')
                 ->color('info')
-                ->action(fn () => $this->printOrder()),
+                ->url(fn () => route('orders.print', $this->record))
+                ->openUrlInNewTab(),
             Actions\Action::make('export_pdf')
                 ->label('Exportar PDF')
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('success')
-                ->action(fn () => $this->exportToPdf()),
+                ->url(fn () => route('orders.pdf', $this->record))
+                ->openUrlInNewTab(),
             Actions\EditAction::make(),
         ];
     }
@@ -126,12 +130,11 @@ class ViewOrder extends ViewRecord
     protected function printOrder(): void
     {
         // Implementar lógica de impresión
-        $this->notify('success', 'Función de impresión en desarrollo');
+        Notification::make()
+            ->title('Función de impresión en desarrollo')
+            ->success()
+            ->send();
     }
 
-    protected function exportToPdf(): void
-    {
-        // Implementar lógica de exportación PDF
-        $this->notify('success', 'Función de exportación PDF en desarrollo');
-    }
+
 }

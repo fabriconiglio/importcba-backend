@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ProductImageController;
+use App\Http\Controllers\Admin\OrderPdfController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -12,4 +13,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/{image}/primary', [ProductImageController::class, 'setPrimary'])->name('primary');
         Route::post('/reorder', [ProductImageController::class, 'reorder'])->name('reorder');
     });
+
+    // Ruta para exportar pedidos a PDF
+    Route::get('/orders/{order}/pdf', [OrderPdfController::class, 'download'])->name('orders.pdf');
 });
