@@ -237,7 +237,8 @@ class Product extends Model
             return $imageUrl;
         }
         
-        return '/images/placeholder-product.png';
+        // Retornar null para que el frontend use su propia imagen por defecto
+        return null;
     }
 
     /**

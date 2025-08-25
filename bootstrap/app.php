@@ -13,9 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Configurar Sanctum para API
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
+        // Comentado: EnsureFrontendRequestsAreStateful no es necesario para API pura con tokens
+        // $middleware->api(prepend: [
+        //     \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        // ]);
         
         // Configurar CORS para API
         $middleware->api(prepend: [

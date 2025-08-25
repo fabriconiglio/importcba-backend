@@ -13,5 +13,6 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'admin/*', // Excluir todas las rutas de admin
+        'api/*', // Excluir todas las rutas de API
     ];
 } 
