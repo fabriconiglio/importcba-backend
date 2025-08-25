@@ -122,9 +122,14 @@ class CatalogController extends Controller
                 ->where('is_active', true)
                 ->firstOrFail();
 
-            $query = Product::with(['category', 'brand', 'primaryImage', 'images'])
-                ->where('category_id', $category->id)
-                ->active();
+                    // Obtener IDs de la categoría y sus subcategorías
+        $categoryIds = [$category->id];
+        $subcategories = Category::where('parent_id', $category->id)->pluck('id')->toArray();
+        $categoryIds = array_merge($categoryIds, $subcategories);
+
+        $query = Product::with(['category', 'brand', 'primaryImage', 'images'])
+            ->whereIn('category_id', $categoryIds)
+            ->active();
 
             // Aplicar filtros adicionales
             $this->applyFilters($query, $request);
@@ -475,10 +480,15 @@ class CatalogController extends Controller
                 ->where('is_active', true)
                 ->firstOrFail();
 
-            $query = Product::with(['category', 'brand', 'primaryImage', 'images'])
-                ->where('category_id', $category->id)
-                ->where('brand_id', $brand->id)
-                ->active();
+                    // Obtener IDs de la categoría y sus subcategorías
+        $categoryIds = [$category->id];
+        $subcategories = Category::where('parent_id', $category->id)->pluck('id')->toArray();
+        $categoryIds = array_merge($categoryIds, $subcategories);
+
+        $query = Product::with(['category', 'brand', 'primaryImage', 'images'])
+            ->whereIn('category_id', $categoryIds)
+            ->where('brand_id', $brand->id)
+            ->active();
 
             // Aplicar filtros adicionales
             $this->applyFilters($query, $request);
