@@ -17,7 +17,7 @@ class PaymentMethodSeeder extends Seeder
             [
                 'name' => 'Tarjeta de Crédito',
                 'type' => 'credit_card',
-                'is_active' => true,
+                'is_active' => false,
                 'configuration' => [
                     'processor' => 'stripe',
                     'supported_cards' => ['visa', 'mastercard', 'amex'],
@@ -27,7 +27,7 @@ class PaymentMethodSeeder extends Seeder
             [
                 'name' => 'Tarjeta de Débito',
                 'type' => 'debit_card',
-                'is_active' => true,
+                'is_active' => false,
                 'configuration' => [
                     'processor' => 'stripe',
                     'supported_cards' => ['visa', 'mastercard'],
@@ -37,7 +37,7 @@ class PaymentMethodSeeder extends Seeder
             [
                 'name' => 'PayPal',
                 'type' => 'paypal',
-                'is_active' => true,
+                'is_active' => false,
                 'configuration' => [
                     'processor' => 'paypal',
                     'environment' => 'sandbox',
@@ -48,19 +48,17 @@ class PaymentMethodSeeder extends Seeder
                 'type' => 'bank_transfer',
                 'is_active' => true,
                 'configuration' => [
-                    'bank_name' => 'Banco Galicia',
-                    'account_holder' => 'Import CBA Mayorista S.R.L.',
-                    'document_number' => '35581839',
-                    'account_number' => '0002348-3 355-9',
-                    'cbu' => '0070355820000002348391',
-                    'cuil' => '20355818390',
-                    'alias' => 'Importcba',
+                    'bank_name' => 'Banco Santander Río',
+                    'account_holder' => 'Import CBA',
+                    'account_number' => '472-358294/7',
+                    'cbu' => '0720472388000035829475',
+                    'cuit' => '30-71569842-3',
                 ],
             ],
             [
                 'name' => 'Efectivo contra Entrega',
                 'type' => 'cash_on_delivery',
-                'is_active' => true,
+                'is_active' => false,
                 'configuration' => [
                     'requires_change' => true,
                     'max_amount' => 1000.00,
@@ -69,7 +67,7 @@ class PaymentMethodSeeder extends Seeder
             [
                 'name' => 'MercadoPago',
                 'type' => 'mercadopago',
-                'is_active' => true,
+                'is_active' => false,
                 'configuration' => [
                     'processor' => 'mercadopago',
                     'environment' => 'sandbox',
