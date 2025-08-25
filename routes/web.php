@@ -7,7 +7,8 @@ Route::get('/', function () {
     return redirect('/admin');
 });
 
-// Ruta para exportar pedidos a PDF (requiere autenticación de admin)
+// Rutas para pedidos - PDF e impresión (requiere autenticación de admin)
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/orders/{order}/pdf', [OrderPdfController::class, 'download'])->name('orders.pdf');
+    Route::get('/admin/orders/{order}/print', [OrderPdfController::class, 'print'])->name('orders.print');
 });

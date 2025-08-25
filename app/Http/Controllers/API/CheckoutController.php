@@ -966,16 +966,13 @@ class CheckoutController extends Controller
             // Primera compra - guardar dirección como principal
             Address::create([
                 'user_id' => $user->id,
-                'type' => 'shipping',
-                'is_default' => true,
-                'first_name' => $shippingAddress['first_name'] ?? '',
-                'last_name' => $shippingAddress['last_name'] ?? '',
+                'title' => 'Dirección Principal',
                 'street_address' => $shippingAddress['street_address'] ?? '',
                 'city' => $shippingAddress['city'] ?? '',
                 'state' => $shippingAddress['state'] ?? '',
                 'postal_code' => $shippingAddress['postal_code'] ?? '',
                 'country' => $shippingAddress['country'] ?? 'Argentina',
-                'phone' => $shippingAddress['phone'] ?? null,
+                'is_default' => true,
             ]);
         }
     }

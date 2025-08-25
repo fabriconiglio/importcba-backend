@@ -39,4 +39,23 @@ class OrderPdfController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Mostrar versión imprimible del pedido
+     */
+    public function print(Order $order): Response
+    {
+        try {
+            // Cargar el pedido con sus relaciones
+            $order->load(['user', 'items.product']);
+            
+            // Retornar vista HTML optimizada para impresión
+            return response()->view('exports.order-print', compact('order'));
+            
+        } catch (\Exception $e) {
+            return response()->view('errors.500', [
+                'message' => 'No se pudo cargar la vista de impresión: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

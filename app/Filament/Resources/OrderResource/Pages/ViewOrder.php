@@ -127,14 +127,7 @@ class ViewOrder extends ViewRecord
             ]);
     }
 
-    protected function printOrder(): void
-    {
-        // Implementar lógica de impresión
-        Notification::make()
-            ->title('Función de impresión en desarrollo')
-            ->success()
-            ->send();
-    }
+
 
 
 }
