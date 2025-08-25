@@ -294,3 +294,12 @@ Route::get('health', function () {
         'version' => '1.0.0'
     ]);
 });
+
+// Health check endpoint for deployment
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'healthy',
+        'timestamp' => now(),
+        'version' => '1.0.0'
+    ]);
+});

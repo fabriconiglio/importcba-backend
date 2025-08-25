@@ -1,9 +1,13 @@
-name: Deploy Backend to Production
+name: Deploy Backend with Migration Approval
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      run_migrations:
+        description: 'Run database migrations?'
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   deploy:
@@ -38,6 +42,7 @@ jobs:
           PROJECT_DIR="/var/www/ecommerce-backend"
           BACKUP_DIR="/var/www/backups"
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          RUN_MIGRATIONS=$1
           
           # Crear directorio de backups si no existe
           mkdir -p $BACKUP_DIR
@@ -64,15 +69,12 @@ jobs:
           php artisan route:clear
           php artisan view:clear
           
-          # Check if there are pending migrations
-          echo "🔍 Checking for pending migrations..."
-          PENDING_MIGRATIONS=$(php artisan migrate:status | grep -c "No" || echo "0")
-          
-          if [ "$PENDING_MIGRATIONS" -gt 0 ]; then
+          # Run migrations only if requested
+          if [ "$RUN_MIGRATIONS" = "true" ]; then
             echo "🔄 Running migrations..."
             php artisan migrate --force
           else
-            echo "✅ No pending migrations found"
+            echo "⏭️ Skipping migrations (not requested)"
           fi
           
           # Set permissions
@@ -112,4 +114,4 @@ jobs:
           
           # Hacer el script ejecutable y ejecutarlo
           chmod +x deploy-script.sh
-          ./deploy-script.sh 
+          ./deploy-script.sh ${{ inputs.run_migrations }} 

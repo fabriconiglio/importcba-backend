@@ -37,9 +37,16 @@ php artisan cache:clear
 php artisan route:clear
 php artisan view:clear
 
-# Run migrations (if any)
-echo "🔄 Running migrations..."
-php artisan migrate --force
+# Check if there are pending migrations
+echo "🔍 Checking for pending migrations..."
+PENDING_MIGRATIONS=$(php artisan migrate:status | grep -c "No" || echo "0")
+
+if [ "$PENDING_MIGRATIONS" -gt 0 ]; then
+    echo "🔄 Running migrations..."
+    php artisan migrate --force
+else
+    echo "✅ No pending migrations found"
+fi
 
 # Set permissions
 echo "🔐 Setting permissions..."
