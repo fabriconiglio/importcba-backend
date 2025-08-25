@@ -44,13 +44,15 @@ Route::prefix('v1')->group(function () {
     // =============================================
     // PRODUCTOS
     // =============================================
-    Route::apiResource('products', ProductController::class);
     
-    // Rutas adicionales para productos
+    // Rutas específicas (deben ir ANTES del apiResource para evitar conflictos)
+    Route::get('products/search', [ProductController::class, 'search']);
     Route::get('products/category/{categorySlug}', [ProductController::class, 'byCategory']);
     Route::get('products/featured/list', [ProductController::class, 'featured']);
-    Route::get('products/search', [ProductController::class, 'search']);
     Route::get('products/{id}/images', [ProductController::class, 'images']);
+    
+    // Rutas RESTful generales
+    Route::apiResource('products', ProductController::class);
 
     // =============================================
     // CATÁLOGO SEO-FRIENDLY
