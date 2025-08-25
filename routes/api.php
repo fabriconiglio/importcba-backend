@@ -21,6 +21,7 @@ use App\Http\Controllers\API\EmailController;
 use App\Http\Controllers\API\DocumentationController;
 use App\Http\Controllers\API\SocialAuthController;
 use App\Http\Controllers\API\NewsletterController;
+use App\Http\Controllers\API\SiteConfigController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,6 +109,11 @@ Route::prefix('v1')->group(function () {
     // =============================================
     Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe']);
     Route::post('newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe']);
+    
+    // =============================================
+    // CONFIGURACIÓN DEL SITIO
+    // =============================================
+    Route::get('site-config/bank-details', [SiteConfigController::class, 'getBankDetails']);
     
     // =============================================
     // AUTENTICACIÓN
