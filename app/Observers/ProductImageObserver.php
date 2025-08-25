@@ -62,7 +62,6 @@ class ProductImageObserver
         if ($productImage->url && Storage::disk('public')->exists($productImage->url)) {
             try {
                 Storage::disk('public')->delete($productImage->url);
-                Log::info("Product image deleted: {$productImage->url}");
             } catch (\Exception $e) {
                 Log::error("Error deleting product image: " . $e->getMessage());
             }
@@ -107,10 +106,8 @@ class ProductImageObserver
                 if ($webpUrl !== $originalUrl && Storage::disk('public')->exists($webpUrl)) {
                     // Actualizar la URL en la base de datos sin disparar eventos
                     $productImage->updateQuietly(['url' => $webpUrl]);
-                    Log::info("Product image URL updated to WebP: {$webpUrl}");
                 }
                 
-                Log::info("Product image optimized successfully: {$productImage->url}");
             }
         } catch (\Exception $e) {
             Log::error("Error optimizing product image {$productImage->id}: " . $e->getMessage());

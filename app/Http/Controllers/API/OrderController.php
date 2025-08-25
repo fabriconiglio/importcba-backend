@@ -111,20 +111,14 @@ class OrderController extends Controller
         try {
             $user = $request->user();
             
-            Log::info('Orders API called', [
-                'user_id' => $user->id,
-                'user_email' => $user->email
-            ]);
-            
-            $orders = Order::where('user_id', $user->id)
-                ->with(['items.product'])
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
-            
-            Log::info('Orders found', [
-                'count' => $orders->count(),
-                'total' => $orders->total()
-            ]);
+                            // Debug logs removed for production
+                
+                $orders = Order::where('user_id', $user->id)
+                    ->with(['items.product'])
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10);
+                
+                // Debug logs removed for production
 
             $orders->getCollection()->transform(function ($order) {
                 return [

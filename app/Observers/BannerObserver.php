@@ -74,10 +74,8 @@ class BannerObserver
                 if ($webpUrl !== $originalUrl && Storage::disk('public')->exists($webpUrl)) {
                     // Actualizar la URL en la base de datos sin disparar eventos
                     $banner->updateQuietly(['image_url' => $webpUrl]);
-                    Log::info("Banner image URL updated to WebP: {$webpUrl}");
                 }
                 
-                Log::info("Banner image optimized successfully: {$banner->image_url}");
             }
         } catch (\Exception $e) {
             Log::error("Error optimizando imagen de banner {$banner->title}: " . $e->getMessage());

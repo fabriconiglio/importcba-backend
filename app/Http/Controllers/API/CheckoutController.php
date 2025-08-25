@@ -113,13 +113,7 @@ class CheckoutController extends Controller
             // Obtener carrito del usuario
             $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
             
-            Log::info('Checkout initiate debug', [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'cart_id' => $cart ? $cart->id : null,
-                'cart_items_count' => $cart ? $cart->items->count() : 0,
-                'cart_total' => $cart ? $cart->getTotal() : 0
-            ]);
+            // Checkout initiate debug removed for production
             
             if (!$cart || $cart->items->isEmpty()) {
                 return response()->json([

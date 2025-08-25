@@ -69,10 +69,8 @@ class CategoryObserver
                 if ($webpUrl !== $originalUrl && Storage::disk('public')->exists($webpUrl)) {
                     // Actualizar la URL en la base de datos sin disparar eventos
                     $category->updateQuietly(['image_url' => $webpUrl]);
-                    Log::info("Category image URL updated to WebP: {$webpUrl}");
                 }
                 
-                Log::info("Category image optimized successfully: {$category->image_url}");
             }
         } catch (\Exception $e) {
             Log::error("Error optimizando imagen de categoría {$category->name}: " . $e->getMessage());
