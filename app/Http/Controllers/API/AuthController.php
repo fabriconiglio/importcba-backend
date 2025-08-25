@@ -30,8 +30,18 @@ class AuthController extends BaseApiController
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"name","email","password","password_confirmation"},
-     *             @OA\Property(property="name", type="string", example="Juan Pérez", description="Nombre completo del usuario"),
+     *             required={"email","password","password_confirmation"},
+     *             oneOf={
+     *                 @OA\Schema(
+     *                     required={"name"},
+     *                     @OA\Property(property="name", type="string", example="Juan Pérez", description="Nombre completo del usuario")
+     *                 ),
+     *                 @OA\Schema(
+     *                     required={"first_name"},
+     *                     @OA\Property(property="first_name", type="string", example="Juan", description="Nombre del usuario"),
+     *                     @OA\Property(property="last_name", type="string", example="Pérez", description="Apellido del usuario (opcional)")
+     *                 )
+     *             },
      *             @OA\Property(property="email", type="string", format="email", example="juan@example.com", description="Email del usuario"),
      *             @OA\Property(property="password", type="string", example="password123", description="Contraseña"),
      *             @OA\Property(property="password_confirmation", type="string", example="password123", description="Confirmación de contraseña"),
@@ -75,7 +85,9 @@ class AuthController extends BaseApiController
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => ['required', 'string', 'max:255'],
+                'name' => ['required_without_all:first_name,last_name', 'string', 'max:255'],
+                'first_name' => ['required_without:name', 'string', 'max:255'],
+                'last_name' => ['nullable', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => ['required', 'confirmed', PasswordRules::defaults()],
                 'phone' => ['nullable', 'string', 'max:20'],
@@ -89,8 +101,14 @@ class AuthController extends BaseApiController
                 ], 422);
             }
 
+            // Concatenar nombre y apellido si vienen separados
+            $fullName = $request->name;
+            if (!$fullName && $request->first_name) {
+                $fullName = trim($request->first_name . ' ' . ($request->last_name ?? ''));
+            }
+
             $user = User::create([
-                'name' => $request->name,
+                'name' => $fullName,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'phone' => $request->phone,

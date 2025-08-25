@@ -36,11 +36,16 @@ class OrderResource extends Resource
             ->schema([
                 Grid::make(3)->schema([
                     Section::make()->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->relationship('user', 'first_name')
-                            ->searchable()
-                            ->required()
-                            ->label('Cliente'),
+                        Forms\Components\TextInput::make('user.first_name')
+                            ->label('Cliente')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(function ($record) {
+                                if ($record && $record->user) {
+                                    return $record->user->first_name . ' ' . ($record->user->last_name ?? '') . ' (' . $record->user->email . ')';
+                                }
+                                return 'Cliente no encontrado';
+                            }),
                         Forms\Components\TextInput::make('order_number')
                             ->required()
                             ->maxLength(50)
@@ -126,10 +131,18 @@ class OrderResource extends Resource
                     ->label('Nro. Pedido')
                     ->copyable()
                     ->copyMessage('Número de pedido copiado'),
-                Tables\Columns\TextColumn::make('user.first_name')
-                    ->searchable()
+                Tables\Columns\TextColumn::make('cliente')
                     ->label('Cliente')
-                    ->description(fn ($record) => $record->user?->email),
+                    ->getStateUsing(function ($record): string {
+                        $user = $record->user;
+                        if (!$user) {
+                            return 'Sin cliente';
+                        }
+                        $fullName = trim($user->first_name . ' ' . ($user->last_name ?? ''));
+                        return $fullName ?: $user->email;
+                    })
+                    ->searchable(false)
+                    ->description(fn ($record) => $record->user?->email ?? 'Sin email'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -292,6 +305,11 @@ class OrderResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with('user');
     }
 
     public static function getRelations(): array

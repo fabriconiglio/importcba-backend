@@ -24,6 +24,8 @@ class User extends Authenticatable implements FilamentUser
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'email',
         'phone',
         'password',
@@ -90,7 +92,13 @@ class User extends Authenticatable implements FilamentUser
      */
     public function getUserName(): string
     {
-        return $this->name ?? $this->email ?? 'Usuario Sin Nombre';
+        // Si tenemos first_name y last_name, construir el nombre completo
+        if ($this->first_name || $this->last_name) {
+            return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
+        }
+        
+        // Fallback al campo name o email
+        return $this->attributes['name'] ?? $this->email ?? 'Usuario Sin Nombre';
     }
 
     /**
@@ -99,6 +107,36 @@ class User extends Authenticatable implements FilamentUser
     public function getNameAttribute(): string
     {
         return $this->getUserName();
+    }
+
+    /**
+     * Mutator para first_name - actualiza el campo name automáticamente
+     */
+    public function setFirstNameAttribute($value)
+    {
+        $this->attributes['first_name'] = $value;
+        $this->updateNameField();
+    }
+
+    /**
+     * Mutator para last_name - actualiza el campo name automáticamente
+     */
+    public function setLastNameAttribute($value)
+    {
+        $this->attributes['last_name'] = $value;
+        $this->updateNameField();
+    }
+
+    /**
+     * Actualiza el campo name basado en first_name y last_name
+     */
+    protected function updateNameField()
+    {
+        if (isset($this->attributes['first_name']) || isset($this->attributes['last_name'])) {
+            $firstName = $this->attributes['first_name'] ?? '';
+            $lastName = $this->attributes['last_name'] ?? '';
+            $this->attributes['name'] = trim($firstName . ' ' . $lastName);
+        }
     }
 
     /**

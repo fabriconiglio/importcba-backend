@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -110,10 +111,20 @@ class OrderController extends Controller
         try {
             $user = $request->user();
             
+            Log::info('Orders API called', [
+                'user_id' => $user->id,
+                'user_email' => $user->email
+            ]);
+            
             $orders = Order::where('user_id', $user->id)
                 ->with(['items.product'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
+            
+            Log::info('Orders found', [
+                'count' => $orders->count(),
+                'total' => $orders->total()
+            ]);
 
             $orders->getCollection()->transform(function ($order) {
                 return [
