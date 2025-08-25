@@ -114,6 +114,213 @@ class CatalogController extends Controller
      *     )
      * )
      */
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/catalog",
+     *     summary="Catálogo general de productos",
+     *     description="Obtiene todos los productos con opciones de búsqueda, filtrado y ordenamiento",
+     *     tags={"Catálogo"},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Productos por página",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Término de búsqueda",
+     *         required=false,
+     *         @OA\Schema(type="string", example="vaso")
+     *     ),
+     *     @OA\Parameter(
+     *         name="category",
+     *         in="query",
+     *         description="Slug de categoría para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", example="bazar")
+     *     ),
+     *     @OA\Parameter(
+     *         name="brand",
+     *         in="query",
+     *         description="Slug de marca para filtrar",
+     *         required=false,
+     *         @OA\Schema(type="string", example="tupperware")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Campo de ordenamiento",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"newest", "oldest", "price_asc", "price_desc", "name_asc", "name_desc"}, example="newest")
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_min",
+     *         in="query",
+     *         description="Precio mínimo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=100.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="price_max",
+     *         in="query",
+     *         description="Precio máximo",
+     *         required=false,
+     *         @OA\Schema(type="number", format="float", example=1000.00)
+     *     ),
+     *     @OA\Parameter(
+     *         name="in_stock",
+     *         in="query",
+     *         description="Solo productos en stock",
+     *         required=false,
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *     @OA\Parameter(
+     *         name="featured",
+     *         in="query",
+     *         description="Solo productos destacados",
+     *         required=false,
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Catálogo de productos obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Catálogo obtenido exitosamente"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="products",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Product")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="pagination",
+     *                     type="object",
+     *                     @OA\Property(property="current_page", type="integer", example=1),
+     *                     @OA\Property(property="per_page", type="integer", example=15),
+     *                     @OA\Property(property="total", type="integer", example=150),
+     *                     @OA\Property(property="last_page", type="integer", example=10)
+     *                 ),
+     *                 @OA\Property(
+     *                     property="filters",
+     *                     type="object",
+     *                     @OA\Property(
+     *                         property="applied",
+     *                         type="object",
+     *                         @OA\Property(property="search", type="string", example="vaso"),
+     *                         @OA\Property(property="category", type="string", example="bazar"),
+     *                         @OA\Property(property="brand", type="string", example="tupperware")
+     *                     ),
+     *                     @OA\Property(
+     *                         property="available",
+     *                         type="object",
+     *                         @OA\Property(
+     *                             property="price_range",
+     *                             type="object",
+     *                             @OA\Property(property="min", type="number", format="float", example=50.00),
+     *                             @OA\Property(property="max", type="number", format="float", example=2000.00)
+     *                         ),
+     *                         @OA\Property(property="total_products", type="integer", example=150),
+     *                         @OA\Property(property="in_stock_count", type="integer", example=120),
+     *                         @OA\Property(property="featured_count", type="integer", example=25)
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            // Construir consulta base
+            $query = Product::with(['category', 'brand', 'primaryImage', 'images'])->active();
+
+            // Aplicar filtros
+            $this->applyFilters($query, $request);
+
+            // Aplicar ordenamiento
+            $this->applySorting($query, $request);
+
+            // Paginación
+            $perPage = (int) $request->get('per_page', 15);
+            $products = $query->paginate($perPage);
+
+            // Transformar productos
+            $products->getCollection()->transform(function ($product) {
+                return $this->transformProduct($product);
+            });
+
+            // Obtener estadísticas para filtros
+            $allProductsQuery = Product::active();
+            $this->applyFilters($allProductsQuery, $request);
+
+            $priceStats = Product::active()
+                ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+                ->first();
+
+            $totalProducts = $allProductsQuery->count();
+            $inStockCount = $allProductsQuery->where('stock_quantity', '>', 0)->count();
+            $featuredCount = $allProductsQuery->where('is_featured', true)->count();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Catálogo obtenido exitosamente',
+                'data' => [
+                    'products' => $products->items(),
+                    'pagination' => [
+                        'current_page' => $products->currentPage(),
+                        'per_page' => $products->perPage(),
+                        'total' => $products->total(),
+                        'last_page' => $products->lastPage(),
+                        'from' => $products->firstItem(),
+                        'to' => $products->lastItem()
+                    ],
+                    'filters' => [
+                        'applied' => [
+                            'search' => $request->get('search', ''),
+                            'category' => $request->get('category', ''),
+                            'brand' => $request->get('brand', ''),
+                            'price_min' => $request->get('price_min', ''),
+                            'price_max' => $request->get('price_max', ''),
+                            'in_stock' => $request->get('in_stock', ''),
+                            'featured' => $request->get('featured', ''),
+                            'sort' => $request->get('sort', 'newest')
+                        ],
+                        'available' => [
+                            'price_range' => [
+                                'min' => $priceStats->min_price ?? 0,
+                                'max' => $priceStats->max_price ?? 0
+                            ],
+                            'total_products' => $totalProducts,
+                            'in_stock_count' => $inStockCount,
+                            'featured_count' => $featuredCount
+                        ]
+                    ]
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al obtener el catálogo',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function byCategory(string $categorySlug, Request $request): JsonResponse
     {
         try {
@@ -753,9 +960,9 @@ class CatalogController extends Controller
         if ($request->filled('search')) {
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%");
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%")
+                  ->orWhere('sku', 'ilike', "%{$search}%");
             });
         }
 
@@ -787,6 +994,20 @@ class CatalogController extends Controller
         if ($request->boolean('on_sale')) {
             $query->whereNotNull('sale_price')
                   ->where('sale_price', '>', 0);
+        }
+
+        // Filtro por categoría (slug)
+        if ($request->filled('category')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('slug', $request->category);
+            });
+        }
+
+        // Filtro por marca (slug)
+        if ($request->filled('brand')) {
+            $query->whereHas('brand', function ($q) use ($request) {
+                $q->where('slug', $request->brand);
+            });
         }
     }
 

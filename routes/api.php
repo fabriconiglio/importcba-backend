@@ -55,6 +55,7 @@ Route::prefix('v1')->group(function () {
     // CATÁLOGO SEO-FRIENDLY
     // =============================================
     Route::prefix('catalog')->group(function () {
+        Route::get('/', [CatalogController::class, 'index']); // Catálogo general
         Route::get('category/{categorySlug}', [CatalogController::class, 'byCategory']);
         Route::get('brand/{brandSlug}', [CatalogController::class, 'byBrand']);
         Route::get('category/{categorySlug}/brand/{brandSlug}', [CatalogController::class, 'byCategoryAndBrand']);
