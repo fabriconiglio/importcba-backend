@@ -1,0 +1,108 @@
+name: Deploy Backend to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          echo "🚀 Starting deployment..."
+          
+          # Navegar al directorio del proyecto
+          cd /var/www/ecommerce-backend
+          
+          # Copiar el script de despliegue si no existe
+          if [ ! -f deploy-script.sh ]; then
+            echo "📝 Creating deployment script..."
+            cat > deploy-script.sh << 'EOF'
+          #!/bin/bash
+          
+          # Script de despliegue para el backend
+          set -e
+          
+          echo "🚀 Starting deployment..."
+          
+          # Variables
+          PROJECT_DIR="/var/www/ecommerce-backend"
+          BACKUP_DIR="/var/www/backups"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          
+          # Crear directorio de backups si no existe
+          mkdir -p $BACKUP_DIR
+          
+          # Navegar al directorio del proyecto
+          cd $PROJECT_DIR
+          
+          # Backup de la base de datos antes del despliegue
+          echo "💾 Creating database backup..."
+          sudo -u postgres pg_dump ecommerce_import > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+          
+          # Pull latest changes
+          echo "📥 Pulling latest changes..."
+          git pull origin main
+          
+          # Install dependencies
+          echo "📦 Installing dependencies..."
+          composer install --no-dev --optimize-autoloader
+          
+          # Clear caches
+          echo "🧹 Clearing caches..."
+          php artisan config:clear
+          php artisan cache:clear
+          php artisan route:clear
+          php artisan view:clear
+          
+          # Run migrations (if any)
+          echo "🔄 Running migrations..."
+          php artisan migrate --force
+          
+          # Set permissions
+          echo "🔐 Setting permissions..."
+          chown -R www-data:www-data $PROJECT_DIR
+          chmod -R 755 $PROJECT_DIR
+          chmod -R 775 storage bootstrap/cache
+          
+          # Restart services
+          echo "🔄 Restarting services..."
+          systemctl restart php8.3-fpm
+          systemctl reload nginx
+          
+          echo "✅ Deployment completed successfully!"
+          
+          # Health check
+          echo "🏥 Performing health check..."
+          sleep 5
+          
+          if curl -f http://localhost/api/v1/health > /dev/null 2>&1; then
+            echo "✅ Health check passed!"
+            echo "🎉 Deployment successful!"
+          else
+            echo "❌ Health check failed!"
+            echo "🔧 Rolling back..."
+            sudo -u postgres psql ecommerce_import < $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+            echo "❌ Deployment failed and rolled back!"
+            exit 1
+          fi
+          
+          # Limpiar backups antiguos
+          ls -t $BACKUP_DIR/backup_before_deploy_*.sql | tail -n +6 | xargs -r rm
+          
+          echo "🎯 Deployment script completed!"
+          EOF
+          fi
+          
+          # Hacer el script ejecutable y ejecutarlo
+          chmod +x deploy-script.sh
+          ./deploy-script.sh 
