@@ -21,8 +21,12 @@ jobs:
         script: |
           echo "🚀 Starting deployment..."
           
-          # Navegar al directorio del proyecto
+          # Configurar Git para usar SSH
+          echo "🔧 Configuring Git..."
           cd /var/www/ecommerce-backend
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git remote set-url origin git@github.com:fabriconiglio/importcba-backend.git
           
           # Copiar el script de despliegue si no existe
           if [ ! -f deploy-script.sh ]; then
