@@ -595,6 +595,70 @@ class ProductController extends BaseApiController
     }
 
     /**
+     * Search products for autocomplete
+     */
+    public function search(Request $request): JsonResponse
+    {
+        try {
+            $query = $request->get('q', '');
+            $limit = (int) $request->get('limit', 8);
+
+            if (strlen($query) < 2) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'message' => 'Término de búsqueda muy corto'
+                ]);
+            }
+
+            $products = Product::with(['category', 'brand', 'primaryImage'])
+                ->active()
+                ->search($query)
+                ->limit($limit)
+                ->get();
+
+            $products = $products->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'sku' => $product->sku,
+                    'price' => $product->price,
+                    'sale_price' => $product->sale_price,
+                    'effective_price' => $product->getEffectivePrice(),
+                    'has_discount' => $product->hasDiscount(),
+                    'discount_percentage' => $product->getDiscountPercentage(),
+                    'primary_image' => $product->primary_image_url,
+                    'category' => $product->category ? [
+                        'id' => $product->category->id,
+                        'name' => $product->category->name,
+                        'slug' => $product->category->slug,
+                    ] : null,
+                    'brand' => $product->brand ? [
+                        'id' => $product->brand->id,
+                        'name' => $product->brand->name,
+                        'slug' => $product->brand->slug,
+                    ] : null,
+                    'in_stock' => $product->isInStock(),
+                    'low_stock' => $product->hasLowStock(),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $products,
+                'message' => 'Productos encontrados correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar productos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get product images
      */
     public function images(string $id): JsonResponse
