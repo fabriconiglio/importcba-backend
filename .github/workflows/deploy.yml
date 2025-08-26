@@ -54,12 +54,11 @@ jobs:
           echo "💾 Creating database backup..."
           sudo -u postgres pg_dump ecommerce_import > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
           
-          # Pull latest changes
+          # Pull latest changes - FORZAR sincronización
           echo "📥 Pulling latest changes..."
-          git fetch origin
+          git fetch origin main
           git reset --hard origin/main
           git clean -fdx
-          git checkout -- .
           
           # Install dependencies
           echo "📦 Installing dependencies..."
@@ -124,4 +123,4 @@ jobs:
           
           # Hacer el script ejecutable y ejecutarlo
           chmod +x deploy-script.sh
-          ./deploy-script.sh 
+          ./deploy-script.sh
