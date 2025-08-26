@@ -20,7 +20,6 @@ jobs:
         port: ${{ secrets.PORT }}
         script: |
           echo "Starting deployment..."
-          
           cd /var/www/ecommerce-backend
           
           cat > deploy-script.sh << 'EOF'
@@ -34,28 +33,49 @@ jobs:
           mkdir -p $BACKUP_DIR
           cd $PROJECT_DIR
           
-          # Backup solo si hay datos importantes
+          # Backup de la base de datos
           echo "Creating database backup..."
           sudo -u postgres pg_dump ecommerce_import > $BACKUP_DIR/backup_$TIMESTAMP.sql
           
-          # Git sync forzado
+          # Backup del .env antes de hacer git clean
+          if [ -f .env ]; then
+            cp .env .env.backup
+            echo "Backed up .env file"
+          fi
+          
+          # Git sync
           echo "Syncing with repository..."
           git fetch origin main
           git reset --hard origin/main
           git clean -fdx
           
+          # Restaurar .env
+          if [ -f .env.backup ]; then
+            mv .env.backup .env
+            echo "Restored .env from backup"
+          else
+            echo "Creating .env from .env.example..."
+            if [ -f .env.example ]; then
+              cp .env.example .env
+              php artisan key:generate --force
+            else
+              echo "ERROR: No .env.example found"
+              exit 1
+            fi
+          fi
+          
           # Install dependencies
           echo "Installing dependencies..."
           COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
           
-          # Clear caches
+          # Clear caches (ahora debería funcionar con PostgreSQL)
           echo "Clearing caches..."
           php artisan config:clear
           php artisan cache:clear
           php artisan route:clear
           php artisan view:clear
           
-          # Solo ejecutar migraciones si hay pendientes
+          # Checking migrations
           echo "Checking migrations..."
           if php artisan migrate:status | grep -q "No"; then
             echo "Running pending migrations..."
@@ -75,11 +95,10 @@ jobs:
           
           echo "Deployment completed!"
           
-          # Health check mejorado
+          # Health check
           echo "Performing health check..."
           sleep 5
           
-          # Intentar diferentes endpoints para verificar
           if curl -f http://localhost/ > /dev/null 2>&1; then
             echo "Application is responding - deployment successful!"
           elif curl -f http://localhost/admin > /dev/null 2>&1; then
@@ -87,10 +106,9 @@ jobs:
           else
             echo "Warning: Application might not be responding correctly"
             echo "Check logs manually: tail -f storage/logs/laravel.log"
-            # No hacer rollback automático por los errores de duplicación
           fi
           
-          # Limpiar backups antiguos
+          # Cleanup old backups
           find $BACKUP_DIR -name "backup_*.sql" -mtime +7 -delete
           
           echo "Deployment process completed!"
