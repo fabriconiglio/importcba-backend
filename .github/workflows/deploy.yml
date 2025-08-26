@@ -19,108 +19,82 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.PORT }}
         script: |
-          echo "🚀 Starting deployment..."
+          echo "Starting deployment..."
           
-          # Configurar Git para usar SSH
-          echo "🔧 Configuring Git..."
           cd /var/www/ecommerce-backend
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git remote set-url origin git@github.com:fabriconiglio/importcba-backend.git
           
-          # Copiar el script de despliegue si no existe
-          if [ ! -f deploy-script.sh ]; then
-            echo "📝 Creating deployment script..."
-            cat > deploy-script.sh << 'EOF'
+          cat > deploy-script.sh << 'EOF'
           #!/bin/bash
-          
-          # Script de despliegue para el backend
           set -e
           
-          echo "🚀 Starting deployment..."
-          
-          # Variables
           PROJECT_DIR="/var/www/ecommerce-backend"
           BACKUP_DIR="/var/www/backups"
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           
-          # Crear directorio de backups si no existe
           mkdir -p $BACKUP_DIR
-          
-          # Navegar al directorio del proyecto
           cd $PROJECT_DIR
           
-          # Backup de la base de datos antes del despliegue
-          echo "💾 Creating database backup..."
-          sudo -u postgres pg_dump ecommerce_import > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+          # Backup solo si hay datos importantes
+          echo "Creating database backup..."
+          sudo -u postgres pg_dump ecommerce_import > $BACKUP_DIR/backup_$TIMESTAMP.sql
           
-          # Pull latest changes - FORZAR sincronización
-          echo "📥 Pulling latest changes..."
+          # Git sync forzado
+          echo "Syncing with repository..."
           git fetch origin main
           git reset --hard origin/main
           git clean -fdx
           
           # Install dependencies
-          echo "📦 Installing dependencies..."
-          composer install --no-dev --optimize-autoloader
+          echo "Installing dependencies..."
+          COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
           
           # Clear caches
-          echo "🧹 Clearing caches..."
+          echo "Clearing caches..."
           php artisan config:clear
           php artisan cache:clear
           php artisan route:clear
           php artisan view:clear
           
-          # Check if there are pending migrations
-          echo "🔍 Checking for pending migrations..."
-          MIGRATION_STATUS=$(php artisan migrate:status 2>/dev/null || echo "No migrations table")
-          
-          if echo "$MIGRATION_STATUS" | grep -q "No"; then
-            echo "🔄 Running migrations..."
+          # Solo ejecutar migraciones si hay pendientes
+          echo "Checking migrations..."
+          if php artisan migrate:status | grep -q "No"; then
+            echo "Running pending migrations..."
             php artisan migrate --force
           else
-            echo "✅ No pending migrations found"
+            echo "No pending migrations"
           fi
           
           # Set permissions
-          echo "🔐 Setting permissions..."
           chown -R www-data:www-data $PROJECT_DIR
           chmod -R 755 $PROJECT_DIR
           chmod -R 775 storage bootstrap/cache
           
           # Restart services
-          echo "🔄 Restarting services..."
           systemctl restart php8.3-fpm
           systemctl reload nginx
           
-          echo "✅ Deployment completed successfully!"
+          echo "Deployment completed!"
           
-          # Health check
-          echo "🏥 Performing health check..."
+          # Health check mejorado
+          echo "Performing health check..."
           sleep 5
           
-          if curl -f http://localhost/api/v1/health > /dev/null 2>&1; then
-            echo "✅ Health check passed!"
-            echo "🎉 Deployment successful!"
+          # Intentar diferentes endpoints para verificar
+          if curl -f http://localhost/ > /dev/null 2>&1; then
+            echo "Application is responding - deployment successful!"
+          elif curl -f http://localhost/admin > /dev/null 2>&1; then
+            echo "Admin panel responding - deployment successful!"
           else
-            echo "❌ Health check failed!"
-            echo "⚠️ Health check failed but deployment might still be working"
-            echo "🔍 Checking if application responds..."
-            if curl -f http://localhost/ > /dev/null 2>&1; then
-              echo "✅ Application is responding, deployment successful!"
-            else
-              echo "❌ Application not responding, but skipping rollback due to data conflicts"
-              echo "🔧 Manual intervention may be required"
-            fi
+            echo "Warning: Application might not be responding correctly"
+            echo "Check logs manually: tail -f storage/logs/laravel.log"
+            # No hacer rollback automático por los errores de duplicación
           fi
           
           # Limpiar backups antiguos
-          ls -t $BACKUP_DIR/backup_before_deploy_*.sql | tail -n +6 | xargs -r rm
+          find $BACKUP_DIR -name "backup_*.sql" -mtime +7 -delete
           
-          echo "🎯 Deployment script completed!"
+          echo "Deployment process completed!"
           EOF
-          fi
           
-          # Hacer el script ejecutable y ejecutarlo
           chmod +x deploy-script.sh
           ./deploy-script.sh
