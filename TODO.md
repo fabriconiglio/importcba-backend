@@ -40,7 +40,7 @@
 
 ### Integración y DevOps
 - [ ] Variables `.env` para FE/BE coherentes (URL API, storage, mail, pagos)
-- [x] CORS afinado por entorno y seguridad de tokens
+- [x] CORS afinado por entorno y seguridad de tokens.
 - [ ] Docker/Sail para desarrollo y compose de stack
 - [ ] Pipeline CI (lint/tests) y guía de despliegue
 - [x] Integrar la paginación en el frontend
