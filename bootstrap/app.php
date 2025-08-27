@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // Configurar CORS para API
         $middleware->api(prepend: [
-            \Illuminate\Http\Middleware\HandleCors::class,
+            \App\Http\Middleware\CorsMiddleware::class,
         ]);
 
         // Agregar middleware de cache para archivos estáticos
