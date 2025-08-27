@@ -11,7 +11,7 @@ class CorsMiddleware
         // Manejar preflight OPTIONS
         if ($request->getMethod() === 'OPTIONS') {
             return response('', 200)
-                ->header('Access-Control-Allow-Origin', 'http://137.184.183.200:3000')
+                ->header('Access-Control-Allow-Origin', 'https://137.184.183.200:3000')
                 ->header('Access-Control-Allow-Credentials', 'true')
                 ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
                 ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
