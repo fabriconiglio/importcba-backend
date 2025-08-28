@@ -117,7 +117,9 @@ class BrandResource extends Resource
                     ->disk('public')
                     ->height(40)
                     ->width(40)
-                    ->defaultImageUrl('/images/no-image.png'),
+                    ->circular()
+                    ->defaultImageUrl('/images/logo.png')
+                    ->visibility('public'),
                 
                 Tables\Columns\TextColumn::make('products_count')
                     ->label('Productos')
