@@ -20,22 +20,22 @@ jobs:
         port: ${{ secrets.PORT }}
         script: |
           echo "Starting deployment..."
-          cd /var/www/ecommerce-backend
+          cd /var/www/importcba-backend
           
           cat > deploy-script.sh << 'EOF'
           #!/bin/bash
           set -e
           
-          PROJECT_DIR="/var/www/ecommerce-backend"
+          PROJECT_DIR="/var/www/importcba-backend"
           BACKUP_DIR="/var/www/backups"
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           
           mkdir -p $BACKUP_DIR
           cd $PROJECT_DIR
           
-          # Backup de la base de datos
+          # Backup de la base de datos (MySQL en lugar de PostgreSQL)
           echo "Creating database backup..."
-          sudo -u postgres pg_dump ecommerce_import > $BACKUP_DIR/backup_$TIMESTAMP.sql
+          mysqldump -u root -p$MYSQL_ROOT_PASSWORD ecommerce_import > $BACKUP_DIR/backup_$TIMESTAMP.sql
           
           # Backup del .env FUERA del directorio del proyecto
           if [ -f .env ]; then
@@ -68,12 +68,28 @@ jobs:
             fi
           fi
           
+          # Install Node dependencies and build assets
+          echo "Installing Node dependencies..."
+          npm install --production
+          
+          echo "Building assets..."
+          npm run build
+          
+          # Crear enlace de storage
+          echo "Creating storage link..."
+          php artisan storage:link
+          
           # Clear caches
           echo "Clearing caches..."
           php artisan config:clear
           php artisan cache:clear
           php artisan route:clear
           php artisan view:clear
+          
+          # Cache config and routes for production
+          echo "Caching configuration..."
+          php artisan config:cache
+          php artisan route:cache
           
           # Checking migrations
           echo "Checking migrations..."
@@ -85,11 +101,13 @@ jobs:
           fi
           
           # Set permissions
+          echo "Setting permissions..."
           chown -R www-data:www-data $PROJECT_DIR
           chmod -R 755 $PROJECT_DIR
           chmod -R 775 storage bootstrap/cache
           
           # Restart services
+          echo "Restarting services..."
           systemctl restart php8.3-fpm
           systemctl reload nginx
           
@@ -99,10 +117,10 @@ jobs:
           echo "Performing health check..."
           sleep 5
           
-          if curl -f http://localhost/ > /dev/null 2>&1; then
-            echo "Application is responding - deployment successful!"
-          elif curl -f http://localhost/admin > /dev/null 2>&1; then
+          if curl -f https://importcbamayorista.com/admin > /dev/null 2>&1; then
             echo "Admin panel responding - deployment successful!"
+          elif curl -f https://importcbamayorista.com/api/v1/health > /dev/null 2>&1; then
+            echo "API responding - deployment successful!"
           else
             echo "Warning: Application might not be responding correctly"
             echo "Check logs manually: tail -f storage/logs/laravel.log"

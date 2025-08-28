@@ -5,10 +5,10 @@
 
 set -e  # Salir si hay algún error
 
-echo "🚀 Starting deployment..."
+echo "Starting deployment..."
 
-# Variables
-PROJECT_DIR="/var/www/ecommerce-backend"
+# Variables - ACTUALIZADO CON EL DIRECTORIO CORRECTO
+PROJECT_DIR="/var/www/importcba-backend"
 BACKUP_DIR="/var/www/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
@@ -18,70 +18,105 @@ mkdir -p $BACKUP_DIR
 # Navegar al directorio del proyecto
 cd $PROJECT_DIR
 
-# Backup de la base de datos antes del despliegue
-echo "💾 Creating database backup..."
-sudo -u postgres pg_dump ecommerce_import > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+# Backup de la base de datos antes del despliegue - CAMBIADO A MYSQL
+echo "Creating database backup..."
+# Obtener credenciales de la base de datos desde .env
+DB_NAME=$(grep DB_DATABASE .env | cut -d '=' -f2)
+DB_USER=$(grep DB_USERNAME .env | cut -d '=' -f2)
+DB_PASS=$(grep DB_PASSWORD .env | cut -d '=' -f2)
+
+mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+
+# Backup del .env
+if [ -f .env ]; then
+  cp .env $BACKUP_DIR/.env.backup.$TIMESTAMP
+  echo "Backed up .env file to $BACKUP_DIR"
+fi
 
 # Pull latest changes
-echo "📥 Pulling latest changes..."
+echo "Pulling latest changes..."
 git pull origin main
 
 # Install dependencies
-echo "📦 Installing dependencies..."
-composer install --no-dev --optimize-autoloader
+echo "Installing dependencies..."
+COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
+
+# Install Node dependencies and build assets - AGREGADO
+echo "Installing Node dependencies..."
+npm install --production
+
+echo "Building assets..."
+npm run build
+
+# Crear enlace de storage - AGREGADO
+echo "Creating storage link..."
+php artisan storage:link
+
+# Restaurar .env después de git pull (por si se sobreescribió)
+if [ -f $BACKUP_DIR/.env.backup.$TIMESTAMP ]; then
+  cp $BACKUP_DIR/.env.backup.$TIMESTAMP .env
+  echo "Restored .env from backup"
+fi
 
 # Clear caches
-echo "🧹 Clearing caches..."
+echo "Clearing caches..."
 php artisan config:clear
 php artisan cache:clear
 php artisan route:clear
 php artisan view:clear
 
+# Cache config and routes for production - AGREGADO
+echo "Caching configuration..."
+php artisan config:cache
+php artisan route:cache
+
 # Check if there are pending migrations
-echo "🔍 Checking for pending migrations..."
+echo "Checking for pending migrations..."
 PENDING_MIGRATIONS=$(php artisan migrate:status | grep -c "No" || echo "0")
 
 if [ "$PENDING_MIGRATIONS" -gt 0 ]; then
-    echo "🔄 Running migrations..."
+    echo "Running migrations..."
     php artisan migrate --force
 else
-    echo "✅ No pending migrations found"
+    echo "No pending migrations found"
 fi
 
 # Set permissions
-echo "🔐 Setting permissions..."
+echo "Setting permissions..."
 chown -R www-data:www-data $PROJECT_DIR
 chmod -R 755 $PROJECT_DIR
 chmod -R 775 storage bootstrap/cache
 
 # Restart services
-echo "🔄 Restarting services..."
+echo "Restarting services..."
 systemctl restart php8.3-fpm
 systemctl reload nginx
 
-echo "✅ Deployment completed successfully!"
+echo "Deployment completed successfully!"
 
-# Health check
-echo "🏥 Performing health check..."
+# Health check - ACTUALIZADO CON HTTPS Y RUTAS CORRECTAS
+echo "Performing health check..."
 sleep 5  # Esperar un poco para que los servicios se reinicien
 
-if curl -f http://localhost/api/v1/health > /dev/null 2>&1; then
-    echo "✅ Health check passed!"
-    echo "🎉 Deployment successful!"
+if curl -f https://importcbamayorista.com/api/v1/health > /dev/null 2>&1; then
+    echo "API health check passed!"
+elif curl -f https://importcbamayorista.com/admin > /dev/null 2>&1; then
+    echo "Admin panel responding - deployment successful!"
 else
-    echo "❌ Health check failed!"
-    echo "🔧 Rolling back..."
+    echo "Health check failed!"
+    echo "Rolling back..."
     
     # Rollback: restaurar backup de BD si es necesario
-    echo "🔄 Restoring database backup..."
-    sudo -u postgres psql ecommerce_import < $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+    echo "Restoring database backup..."
+    mysql -u $DB_USER -p$DB_PASS $DB_NAME < $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
     
-    echo "❌ Deployment failed and rolled back!"
+    echo "Deployment failed and rolled back!"
     exit 1
 fi
 
-# Limpiar backups antiguos (mantener solo los últimos 5)
-echo "🧹 Cleaning old backups..."
-ls -t $BACKUP_DIR/backup_before_deploy_*.sql | tail -n +6 | xargs -r rm
+# Limpiar backups antiguos (mantener solo los últimos 7 días)
+echo "Cleaning old backups..."
+find $BACKUP_DIR -name "backup_before_deploy_*.sql" -mtime +7 -delete
+find $BACKUP_DIR -name ".env.backup.*" -mtime +7 -delete
 
-echo "🎯 Deployment script completed!" 
+echo "Deployment script completed!"
