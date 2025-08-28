@@ -89,14 +89,6 @@ jobs:
             echo "Backed up .env file to $BACKUP_DIR"
           fi
           
-          # Backup del storage ANTES de cualquier operación
-          echo "Creating storage backup..."
-          if [ -d "storage/app/public" ]; then
-            mkdir -p $BACKUP_DIR/storage_backup_$TIMESTAMP
-            cp -r storage/app/public/* $BACKUP_DIR/storage_backup_$TIMESTAMP/
-            echo "Storage backup created in $BACKUP_DIR/storage_backup_$TIMESTAMP"
-          fi
-          
           # Git sync con mejor manejo de errores
           echo "Syncing with repository..."
           
@@ -129,14 +121,6 @@ jobs:
           git reset --hard origin/main
           # NO limpiar storage, solo otros archivos
           git clean -fd
-          
-          # Restaurar storage desde backup si existe
-          echo "Restoring storage from backup..."
-          if [ -d "$BACKUP_DIR/storage_backup_$TIMESTAMP" ]; then
-            mkdir -p storage/app/public
-            cp -r $BACKUP_DIR/storage_backup_$TIMESTAMP/* storage/app/public/
-            echo "Storage restored from backup"
-          fi
           
           # Install dependencies PRIMERO
           echo "Installing dependencies..."
