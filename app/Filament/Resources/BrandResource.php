@@ -35,16 +35,35 @@ class BrandResource extends Resource
                     ->label('Nombre')
                     ->required()
                     ->maxLength(255)
-                    ->live()
+                    ->live() // Mantener live pero con debounce
+                    ->debounce(500) // Esperar 500ms antes de procesar
                     ->afterStateUpdated(function ($state, callable $set) {
-                        $set('slug', Str::slug($state));
-                    }),
+                        // Solo generar slug si el nombre no está vacío
+                        if (!empty($state)) {
+                            $set('slug', Str::slug($state));
+                        }
+                    })
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'spellcheck' => 'false',
+                    ]),
+                
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true) // Evitar conflictos de unicidad
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'spellcheck' => 'false',
+                    ]),
+                
                 Forms\Components\Textarea::make('description')
-                    ->label('Descripción'),
+                    ->label('Descripción')
+                    ->rows(3)
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                    ]),
                 
                 Forms\Components\Group::make([
                     Forms\Components\FileUpload::make('logo_url')
@@ -80,7 +99,9 @@ class BrandResource extends Resource
                 Forms\Components\Toggle::make('is_active')
                     ->label('Activo')
                     ->default(true),
-            ]);
+            ])
+            ->columns(1) // Mejorar el layout en una sola columna
+            ->statePath('data'); // Optimizar el manejo del estado
     }
 
     public static function table(Table $table): Table

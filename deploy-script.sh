@@ -7,7 +7,7 @@ set -e  # Salir si hay algún error
 
 echo "Starting deployment..."
 
-# Variables - ACTUALIZADO CON EL DIRECTORIO CORRECTO
+# Variables - ACTUALIZADO
 PROJECT_DIR="/var/www/importcba-backend"
 BACKUP_DIR="/var/www/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -18,14 +18,10 @@ mkdir -p $BACKUP_DIR
 # Navegar al directorio del proyecto
 cd $PROJECT_DIR
 
-# Backup de la base de datos antes del despliegue - CAMBIADO A MYSQL
+# Backup de la base de datos antes del despliegue - PostgreSQL
 echo "Creating database backup..."
-# Obtener credenciales de la base de datos desde .env
 DB_NAME=$(grep DB_DATABASE .env | cut -d '=' -f2)
-DB_USER=$(grep DB_USERNAME .env | cut -d '=' -f2)
-DB_PASS=$(grep DB_PASSWORD .env | cut -d '=' -f2)
-
-mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+sudo -u postgres pg_dump $DB_NAME > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
 
 # Backup del .env
 if [ -f .env ]; then
@@ -52,7 +48,7 @@ npm run build
 echo "Creating storage link..."
 php artisan storage:link
 
-# Restaurar .env después de git pull (por si se sobreescribió)
+# Restaurar .env después de git pull
 if [ -f $BACKUP_DIR/.env.backup.$TIMESTAMP ]; then
   cp $BACKUP_DIR/.env.backup.$TIMESTAMP .env
   echo "Restored .env from backup"
@@ -94,21 +90,21 @@ systemctl reload nginx
 
 echo "Deployment completed successfully!"
 
-# Health check - ACTUALIZADO CON HTTPS Y RUTAS CORRECTAS
+# Health check - ACTUALIZADO
 echo "Performing health check..."
-sleep 5  # Esperar un poco para que los servicios se reinicien
+sleep 5
 
 if curl -f https://importcbamayorista.com/api/v1/health > /dev/null 2>&1; then
-    echo "API health check passed!"
+    echo "Health check passed!"
 elif curl -f https://importcbamayorista.com/admin > /dev/null 2>&1; then
     echo "Admin panel responding - deployment successful!"
 else
     echo "Health check failed!"
     echo "Rolling back..."
     
-    # Rollback: restaurar backup de BD si es necesario
+    # Rollback: restaurar backup de BD si es necesario - PostgreSQL
     echo "Restoring database backup..."
-    mysql -u $DB_USER -p$DB_PASS $DB_NAME < $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+    sudo -u postgres psql $DB_NAME < $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
     
     echo "Deployment failed and rolled back!"
     exit 1

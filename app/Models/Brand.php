@@ -44,8 +44,9 @@ class Brand extends Model
         });
 
         static::updating(function ($model) {
-            // Generar slug automáticamente si no existe o si cambia el nombre
-            if ((empty($model->slug) && !empty($model->name)) || $model->isDirty('name')) {
+            // Solo generar slug si el nombre cambió y el slug está vacío o es diferente
+            if ($model->isDirty('name') && 
+                (empty($model->slug) || $model->slug !== Str::slug($model->name))) {
                 $model->slug = Str::slug($model->name);
             }
         });
