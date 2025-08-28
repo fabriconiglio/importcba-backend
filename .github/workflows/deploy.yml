@@ -142,7 +142,7 @@ jobs:
           
           # Install Node dependencies and build assets
           echo "Installing Node dependencies..."
-          npm install --production
+          npm install
           
           echo "Building assets..."
           npm run build

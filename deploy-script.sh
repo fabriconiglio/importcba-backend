@@ -68,7 +68,7 @@ COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-
 
 # Install Node dependencies and build assets - AGREGADO
 echo "Installing Node dependencies..."
-npm install --production
+npm install
 
 echo "Building assets..."
 npm run build
