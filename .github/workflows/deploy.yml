@@ -89,6 +89,14 @@ jobs:
             echo "Backed up .env file to $BACKUP_DIR"
           fi
           
+          # Backup del storage ANTES de cualquier operación
+          echo "Creating storage backup..."
+          if [ -d "storage/app/public" ]; then
+            mkdir -p $BACKUP_DIR/storage_backup_$TIMESTAMP
+            cp -r storage/app/public/* $BACKUP_DIR/storage_backup_$TIMESTAMP/
+            echo "Storage backup created in $BACKUP_DIR/storage_backup_$TIMESTAMP"
+          fi
+          
           # Git sync con mejor manejo de errores
           echo "Syncing with repository..."
           
@@ -116,10 +124,19 @@ jobs:
             fi
           fi
           
-          # Reset y clean
+          # Reset y clean (preservando storage)
           echo "Resetting to origin/main..."
           git reset --hard origin/main
-          git clean -fdx
+          # NO limpiar storage, solo otros archivos
+          git clean -fd
+          
+          # Restaurar storage desde backup si existe
+          echo "Restoring storage from backup..."
+          if [ -d "$BACKUP_DIR/storage_backup_$TIMESTAMP" ]; then
+            mkdir -p storage/app/public
+            cp -r $BACKUP_DIR/storage_backup_$TIMESTAMP/* storage/app/public/
+            echo "Storage restored from backup"
+          fi
           
           # Install dependencies PRIMERO
           echo "Installing dependencies..."
@@ -147,9 +164,14 @@ jobs:
           echo "Building assets..."
           npm run build
           
-          # Crear enlace de storage
-          echo "Creating storage link..."
-          php artisan storage:link
+          # Crear enlace de storage solo si no existe
+          echo "Checking storage link..."
+          if [ ! -L "public/storage" ]; then
+            echo "Creating storage link..."
+            php artisan storage:link
+          else
+            echo "Storage link already exists, skipping..."
+          fi
           
           # Clear caches
           echo "Clearing caches..."
@@ -177,6 +199,11 @@ jobs:
           chown -R www-data:www-data $PROJECT_DIR
           chmod -R 755 $PROJECT_DIR
           chmod -R 775 storage bootstrap/cache
+          
+          # Permisos específicos para el storage
+          echo "Setting storage permissions..."
+          chmod -R 775 storage/app/public
+          chown -R www-data:www-data storage/app/public
           
           # Restart services
           echo "Restarting services..."
