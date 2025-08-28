@@ -22,6 +22,22 @@ jobs:
           echo "Starting deployment..."
           cd /var/www/importcba-backend
           
+          # Configurar Git para usar SSH en lugar de HTTPS
+          echo "Configuring Git for SSH access..."
+          git config --global --add safe.directory /var/www/importcba-backend
+          
+          # Verificar configuración actual de Git
+          echo "Current Git remote configuration:"
+          git remote -v
+          
+          # Cambiar remote de HTTPS a SSH si es necesario
+          if git remote get-url origin | grep -q "https://github.com"; then
+            echo "Converting HTTPS remote to SSH..."
+            GITHUB_REPO=$(git remote get-url origin | sed 's|https://github.com/|git@github.com:|')
+            git remote set-url origin $GITHUB_REPO
+            echo "Remote updated to: $GITHUB_REPO"
+          fi
+          
           cat > deploy-script.sh << 'EOF'
           #!/bin/bash
           set -e
@@ -73,9 +89,35 @@ jobs:
             echo "Backed up .env file to $BACKUP_DIR"
           fi
           
-          # Git sync
+          # Git sync con mejor manejo de errores
           echo "Syncing with repository..."
-          git fetch origin main
+          
+          # Verificar que el remote esté configurado correctamente
+          if ! git remote get-url origin &> /dev/null; then
+            echo "ERROR: No origin remote configured"
+            exit 1
+          fi
+          
+          # Intentar fetch con SSH
+          echo "Fetching latest changes..."
+          if ! git fetch origin main; then
+            echo "ERROR: Failed to fetch from origin/main"
+            echo "Trying to fix remote configuration..."
+            
+            # Intentar configurar remote SSH manualmente
+            GITHUB_REPO="git@github.com:${{ github.repository }}.git"
+            git remote set-url origin $GITHUB_REPO
+            echo "Remote set to: $GITHUB_REPO"
+            
+            # Intentar fetch nuevamente
+            if ! git fetch origin main; then
+              echo "ERROR: Still cannot fetch from repository"
+              exit 1
+            fi
+          fi
+          
+          # Reset y clean
+          echo "Resetting to origin/main..."
           git reset --hard origin/main
           git clean -fdx
           
