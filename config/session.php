@@ -18,21 +18,21 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => env('SESSION_DRIVER', 'file'), // Cambiar a file para mejor rendimiento
 
     /*
     |--------------------------------------------------------------------------
     | Session Lifetime
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the number of minutes that you wish the session
+    | This option determines the number of minutes that you wish the session
     | to be allowed to remain idle before it expires. If you want them
     | to expire immediately when the browser is closed then you may
     | indicate that via the expire_on_close configuration option.
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    'lifetime' => (int) env('SESSION_LIFETIME', 240), // Aumentar a 4 horas para admin
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 

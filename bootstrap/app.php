@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Agregar middleware de cache para archivos estáticos
         $middleware->web(append: [
             \App\Http\Middleware\CacheControlMiddleware::class,
+            \App\Http\Middleware\FilamentOptimizationMiddleware::class,
         ]);
 
         $middleware->alias([
