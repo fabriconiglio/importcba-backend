@@ -33,9 +33,39 @@ jobs:
           mkdir -p $BACKUP_DIR
           cd $PROJECT_DIR
           
-          # Backup de la base de datos (MySQL en lugar de PostgreSQL)
-          echo "Creating database backup..."
-          mysqldump -u root -p$MYSQL_ROOT_PASSWORD ecommerce_import > $BACKUP_DIR/backup_$TIMESTAMP.sql
+          # Detectar tipo de base de datos y hacer backup
+          echo "Detecting database type and creating backup..."
+          if command -v psql &> /dev/null; then
+            echo "PostgreSQL detected, creating backup..."
+            # Obtener nombre de la BD desde .env
+            if [ -f .env ]; then
+              DB_NAME=$(grep DB_DATABASE .env | cut -d '=' -f2)
+              if [ -n "$DB_NAME" ]; then
+                sudo -u postgres pg_dump $DB_NAME > $BACKUP_DIR/backup_$TIMESTAMP.sql
+                echo "PostgreSQL backup created: backup_$TIMESTAMP.sql"
+              else
+                echo "Warning: Could not determine database name from .env"
+              fi
+            else
+              echo "Warning: .env file not found, skipping database backup"
+            fi
+          elif command -v mysqldump &> /dev/null; then
+            echo "MySQL detected, creating backup..."
+            if [ -f .env ]; then
+              DB_NAME=$(grep DB_DATABASE .env | cut -d '=' -f2)
+              if [ -n "$DB_NAME" ]; then
+                mysqldump -u root -p$MYSQL_ROOT_PASSWORD $DB_NAME > $BACKUP_DIR/backup_$TIMESTAMP.sql
+                echo "MySQL backup created: backup_$TIMESTAMP.sql"
+              else
+                echo "Warning: Could not determine database name from .env"
+              fi
+            else
+              echo "Warning: .env file not found, skipping database backup"
+            fi
+          else
+            echo "Warning: No database client found (psql or mysqldump)"
+            echo "Skipping database backup"
+          fi
           
           # Backup del .env FUERA del directorio del proyecto
           if [ -f .env ]; then

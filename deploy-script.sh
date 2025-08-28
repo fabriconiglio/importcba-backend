@@ -18,10 +18,39 @@ mkdir -p $BACKUP_DIR
 # Navegar al directorio del proyecto
 cd $PROJECT_DIR
 
-# Backup de la base de datos antes del despliegue - PostgreSQL
-echo "Creating database backup..."
-DB_NAME=$(grep DB_DATABASE .env | cut -d '=' -f2)
-sudo -u postgres pg_dump $DB_NAME > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+# Detectar tipo de base de datos y hacer backup
+echo "Detecting database type and creating backup..."
+if command -v psql &> /dev/null; then
+  echo "PostgreSQL detected, creating backup..."
+  # Obtener nombre de la BD desde .env
+  if [ -f .env ]; then
+    DB_NAME=$(grep DB_DATABASE .env | cut -d '=' -f2)
+    if [ -n "$DB_NAME" ]; then
+      sudo -u postgres pg_dump $DB_NAME > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+      echo "PostgreSQL backup created: backup_before_deploy_$TIMESTAMP.sql"
+    else
+      echo "Warning: Could not determine database name from .env"
+    fi
+  else
+    echo "Warning: .env file not found, skipping database backup"
+  fi
+elif command -v mysqldump &> /dev/null; then
+  echo "MySQL detected, creating backup..."
+  if [ -f .env ]; then
+    DB_NAME=$(grep DB_DATABASE .env | cut -d '=' -f2)
+    if [ -n "$DB_NAME" ]; then
+      mysqldump -u root -p$MYSQL_ROOT_PASSWORD $DB_NAME > $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+      echo "MySQL backup created: backup_before_deploy_$TIMESTAMP.sql"
+    else
+      echo "Warning: Could not determine database name from .env"
+    fi
+  else
+    echo "Warning: .env file not found, skipping database backup"
+  fi
+else
+  echo "Warning: No database client found (psql or mysqldump)"
+  echo "Skipping database backup"
+fi
 
 # Backup del .env
 if [ -f .env ]; then
@@ -102,9 +131,17 @@ else
     echo "Health check failed!"
     echo "Rolling back..."
     
-    # Rollback: restaurar backup de BD si es necesario - PostgreSQL
-    echo "Restoring database backup..."
-    sudo -u postgres psql $DB_NAME < $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+    # Rollback: restaurar backup de BD si es necesario
+    if [ -f $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql ]; then
+      echo "Restoring database backup..."
+      if command -v psql &> /dev/null; then
+        sudo -u postgres psql $DB_NAME < $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+        echo "PostgreSQL backup restored"
+      elif command -v mysql &> /dev/null; then
+        mysql -u root -p$MYSQL_ROOT_PASSWORD $DB_NAME < $BACKUP_DIR/backup_before_deploy_$TIMESTAMP.sql
+        echo "MySQL backup restored"
+      fi
+    fi
     
     echo "Deployment failed and rolled back!"
     exit 1
