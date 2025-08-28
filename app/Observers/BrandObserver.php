@@ -46,6 +46,25 @@ class BrandObserver
     }
 
     /**
+     * Handle the Brand "deleting" event.
+     * IMPORTANTE: Este método se ejecuta ANTES de eliminar la marca
+     */
+    public function deleting(Brand $brand): void
+    {
+        // Opción 1: Eliminar todos los productos de esta marca
+        // $brand->products()->delete();
+        
+        // Opción 2: Desasociar productos de la marca (más seguro)
+        $brand->products()->update(['brand_id' => null]);
+        
+        // Opción 3: Desactivar productos en lugar de eliminarlos
+        // $brand->products()->update(['is_active' => false]);
+        
+        // Eliminar relaciones many-to-many con categorías
+        $brand->categories()->detach();
+    }
+
+    /**
      * Optimizar imagen si es necesario
      */
     private function optimizeImageIfNeeded(Brand $brand): void

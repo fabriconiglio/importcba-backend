@@ -76,4 +76,10 @@ class Brand extends Model
     {
         return $query->where('slug', $slug);
     }
+
+    // Scope para incluir conteo de productos
+    public function scopeWithProductsCount($query)
+    {
+        return $query->withCount('products');
+    }
 }

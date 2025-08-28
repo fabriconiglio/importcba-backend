@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Filament\Tables\Actions\Action;
+use Filament\Notifications\Notification;
 
 class BrandResource extends Resource
 {
@@ -35,10 +37,7 @@ class BrandResource extends Resource
                     ->label('Nombre')
                     ->required()
                     ->maxLength(255)
-                    ->live() // Mantener live pero con debounce
-                    ->debounce(500) // Esperar 500ms antes de procesar
                     ->afterStateUpdated(function ($state, callable $set) {
-                        // Solo generar slug si el nombre no está vacío
                         if (!empty($state)) {
                             $set('slug', Str::slug($state));
                         }
@@ -107,6 +106,7 @@ class BrandResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->withProductsCount())
             ->columns([
                 Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable(),
                 Tables\Columns\TextColumn::make('slug')->label('Slug')->searchable(),
@@ -119,6 +119,18 @@ class BrandResource extends Resource
                     ->width(40)
                     ->defaultImageUrl('/images/no-image.png'),
                 
+                Tables\Columns\TextColumn::make('products_count')
+                    ->label('Productos')
+                    ->counts('products')
+                    ->sortable()
+                    ->badge()
+                    ->color(fn (int $state): string => match (true) {
+                        $state === 0 => 'gray',
+                        $state <= 5 => 'success',
+                        $state <= 20 => 'warning',
+                        default => 'danger',
+                    }),
+                
                 Tables\Columns\IconColumn::make('is_active')->label('Activo')->boolean(),
                 Tables\Columns\TextColumn::make('created_at')->label('Creado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')->label('Actualizado')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
@@ -128,6 +140,48 @@ class BrandResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Editar'),
+                Action::make('delete')
+                    ->label('Eliminar')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('¿Eliminar marca?')
+                    ->modalDescription(function (Brand $record) {
+                        $productCount = $record->products()->count();
+                        if ($productCount > 0) {
+                            return "Esta marca tiene {$productCount} producto(s) asociado(s). Al eliminarla, los productos quedarán sin marca asignada.";
+                        }
+                        return '¿Estás seguro de que quieres eliminar esta marca?';
+                    })
+                    ->modalSubmitActionLabel('Sí, eliminar')
+                    ->modalCancelActionLabel('Cancelar')
+                    ->action(function (Brand $record) {
+                        try {
+                            $productCount = $record->products()->count();
+                            $record->delete();
+                            
+                            if ($productCount > 0) {
+                                Notification::make()
+                                    ->title('Marca eliminada')
+                                    ->body("La marca se eliminó correctamente. {$productCount} producto(s) quedaron sin marca asignada.")
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Marca eliminada')
+                                    ->body('La marca se eliminó correctamente.')
+                                    ->success()
+                                    ->send();
+                            }
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Error al eliminar')
+                                ->body('No se pudo eliminar la marca. Verifica que no tenga productos asociados.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->visible(fn (Brand $record) => $record->products()->count() === 0 || true), // Mostrar siempre para permitir eliminación
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
