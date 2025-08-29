@@ -45,14 +45,24 @@ class ProductResource extends Resource
                     ->label('Nombre')
                     ->required()
                     ->maxLength(255)
-                    ->live()
                     ->afterStateUpdated(function ($state, callable $set) {
-                        $set('slug', \Illuminate\Support\Str::slug($state));
-                    }),
+                        if (!empty($state)) {
+                            $set('slug', \Illuminate\Support\Str::slug($state));
+                        }
+                    })
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'spellcheck' => 'false',
+                    ]),
                 Forms\Components\TextInput::make('slug')
                     ->label('Slug')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true) // Evitar conflictos de unicidad
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'spellcheck' => 'false',
+                    ]),
                 Forms\Components\TextInput::make('sku')
                     ->label('SKU')
                     ->required()
