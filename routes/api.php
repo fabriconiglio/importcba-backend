@@ -22,6 +22,7 @@ use App\Http\Controllers\API\DocumentationController;
 use App\Http\Controllers\API\SocialAuthController;
 use App\Http\Controllers\API\NewsletterController;
 use App\Http\Controllers\API\SiteConfigController;
+use App\Http\Controllers\API\VolumeDiscountController;
 
 /*
 |--------------------------------------------------------------------------
@@ -98,6 +99,13 @@ Route::prefix('v1')->group(function () {
     // CUPONES PÚBLICOS
     // =============================================
     Route::get('coupons/public', [CouponController::class, 'publicIndex']);
+    
+    // =============================================
+    // DESCUENTOS POR VOLUMEN
+    // =============================================
+    Route::get('volume-discounts/tiers', [VolumeDiscountController::class, 'getTiers']);
+    Route::post('volume-discounts/calculate', [VolumeDiscountController::class, 'calculate']);
+    Route::post('volume-discounts/progress', [VolumeDiscountController::class, 'getProgress']);
     
     // =============================================
     // BANNERS PÚBLICOS
