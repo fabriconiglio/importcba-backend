@@ -14,6 +14,7 @@ use App\Models\PaymentMethod;
 use App\Models\Coupon;
 use App\Services\StockReservationService;
 use App\Services\EmailService;
+use App\Services\VolumeDiscountService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -32,11 +33,16 @@ class CheckoutController extends Controller
 {
     private StockReservationService $stockReservationService;
     private EmailService $emailService;
+    private VolumeDiscountService $volumeDiscountService;
 
-    public function __construct(StockReservationService $stockReservationService, EmailService $emailService)
-    {
+    public function __construct(
+        StockReservationService $stockReservationService, 
+        EmailService $emailService,
+        VolumeDiscountService $volumeDiscountService
+    ) {
         $this->stockReservationService = $stockReservationService;
         $this->emailService = $emailService;
+        $this->volumeDiscountService = $volumeDiscountService;
     }
 
     /**
@@ -363,8 +369,15 @@ class CheckoutController extends Controller
                 }
             }
 
+            // Calcular descuento por volumen (automático)
+            $volumeDiscount = $this->volumeDiscountService->getVolumeDiscount($subtotal);
+            $volumeDiscountAmount = $volumeDiscount['amount'];
+            
+            // Descuento total (cupón + volumen)
+            $totalDiscountAmount = $discountAmount + $volumeDiscountAmount;
+            
             // Calcular total
-            $totalAmount = $subtotal + $shippingCost + $taxAmount - $discountAmount;
+            $totalAmount = $subtotal + $shippingCost + $taxAmount - $totalDiscountAmount;
 
             return response()->json([
                 'success' => true,
@@ -372,7 +385,9 @@ class CheckoutController extends Controller
                     'subtotal' => $subtotal,
                     'shipping_cost' => $shippingCost,
                     'tax_amount' => $taxAmount,
-                    'discount_amount' => $discountAmount,
+                    'coupon_discount' => $discountAmount,
+                    'volume_discount' => $volumeDiscountAmount,
+                    'total_discount' => $totalDiscountAmount,
                     'total_amount' => $totalAmount,
                     'shipping_method' => [
                         'id' => $shippingMethod->id,
@@ -388,11 +403,19 @@ class CheckoutController extends Controller
                         'discount_value' => $coupon->discount_value,
                         'discount_amount' => $discountAmount,
                     ] : null,
+                    'volume_discount_info' => [
+                        'has_discount' => $volumeDiscount['has_discount'],
+                        'percentage' => $volumeDiscount['percentage'],
+                        'amount' => $volumeDiscountAmount,
+                        'next_tier' => $volumeDiscount['next_tier']
+                    ],
                     'breakdown' => [
                         'items_total' => $subtotal,
                         'shipping' => $shippingCost,
                         'tax' => $taxAmount,
-                        'discount' => -$discountAmount,
+                        'coupon_discount' => -$discountAmount,
+                        'volume_discount' => -$volumeDiscountAmount,
+                        'total_discount' => -$totalDiscountAmount,
                         'total' => $totalAmount,
                     ]
                 ],
@@ -922,6 +945,74 @@ class CheckoutController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al validar cupón: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/checkout/volume-discount-info",
+     *     summary="Obtener información de descuentos por volumen del carrito",
+     *     description="Obtiene información sobre descuentos por volumen aplicables al carrito actual",
+     *     tags={"Checkout"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Información de descuentos por volumen obtenida",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="subtotal", type="number", example=250000),
+     *                 @OA\Property(property="volume_discount", type="object",
+     *                     @OA\Property(property="has_discount", type="boolean", example=false),
+     *                     @OA\Property(property="percentage", type="integer", example=0),
+     *                     @OA\Property(property="amount", type="number", example=0),
+     *                     @OA\Property(property="next_tier", type="object",
+     *                         @OA\Property(property="amount", type="number", example=300000),
+     *                         @OA\Property(property="percentage", type="integer", example=10),
+     *                         @OA\Property(property="remaining", type="number", example=50000)
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Información obtenida correctamente")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     */
+    public function getVolumeDiscountInfo(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
+
+            if (!$cart || $cart->items->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El carrito está vacío'
+                ], 400);
+            }
+
+            $subtotal = $cart->getTotal();
+            $volumeDiscount = $this->volumeDiscountService->getVolumeDiscount($subtotal);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'subtotal' => $subtotal,
+                    'volume_discount' => $volumeDiscount
+                ],
+                'message' => 'Información obtenida correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener información: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -172,6 +172,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::post('calculate', [CheckoutController::class, 'calculate']);
         Route::post('confirm', [CheckoutController::class, 'confirm']);
         Route::post('validate-coupon', [CheckoutController::class, 'validateCoupon']);
+        Route::get('volume-discount-info', [CheckoutController::class, 'getVolumeDiscountInfo']);
     });
     
     // =============================================
