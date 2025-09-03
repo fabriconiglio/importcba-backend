@@ -116,10 +116,11 @@ class CheckoutController extends Controller
         try {
             $user = $request->user();
             
-            // Obtener carrito del usuario
-            $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
-            
-            // Checkout initiate debug removed for production
+            // Obtener carrito del usuario (el más reciente)
+            $cart = Cart::where('user_id', $user->id)
+                ->with(['items.product'])
+                ->orderBy('updated_at', 'desc')
+                ->first();
             
             if (!$cart || $cart->items->isEmpty()) {
                 return response()->json([
@@ -158,7 +159,14 @@ class CheckoutController extends Controller
             $subtotal = $cart->getTotal();
             $shippingCost = 0;
             $taxAmount = $this->calculateTax($subtotal);
-            $discountAmount = 0;
+            
+            // Calcular descuento por volumen automático
+            $volumeDiscount = $this->volumeDiscountService->getVolumeDiscount($subtotal);
+            $volumeDiscountAmount = $volumeDiscount['amount'];
+            
+
+            
+            $discountAmount = $volumeDiscountAmount; // Por ahora solo descuento por volumen
             $totalAmount = $subtotal + $shippingCost + $taxAmount - $discountAmount;
 
             return response()->json([
@@ -170,7 +178,14 @@ class CheckoutController extends Controller
                         'shipping_cost' => $shippingCost,
                         'tax_amount' => $taxAmount,
                         'discount_amount' => $discountAmount,
+                        'volume_discount' => $volumeDiscountAmount,
                         'total_amount' => $totalAmount,
+                    ],
+                    'volume_discount_info' => [
+                        'has_discount' => $volumeDiscount['has_discount'],
+                        'percentage' => $volumeDiscount['percentage'],
+                        'amount' => $volumeDiscountAmount,
+                        'next_tier' => $volumeDiscount['next_tier']
                     ],
                     'addresses' => $addresses,
                     'shipping_methods' => $shippingMethods,
@@ -306,7 +321,7 @@ class CheckoutController extends Controller
             }
 
             $user = $request->user();
-            $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
+            $cart = Cart::where('user_id', $user->id)->with(['items.product'])->orderBy('updated_at', 'desc')->first();
 
             if (!$cart || $cart->items->isEmpty()) {
                 return response()->json([
@@ -541,7 +556,7 @@ class CheckoutController extends Controller
 
             return DB::transaction(function () use ($request, $user) {
                 // Obtener carrito
-                $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
+                $cart = Cart::where('user_id', $user->id)->with(['items.product'])->orderBy('updated_at', 'desc')->first();
 
                 if (!$cart || $cart->items->isEmpty()) {
                     throw new \Exception('El carrito está vacío');
@@ -988,7 +1003,7 @@ class CheckoutController extends Controller
     {
         try {
             $user = $request->user();
-            $cart = Cart::where('user_id', $user->id)->with(['items.product'])->first();
+            $cart = Cart::where('user_id', $user->id)->with(['items.product'])->orderBy('updated_at', 'desc')->first();
 
             if (!$cart || $cart->items->isEmpty()) {
                 return response()->json([
