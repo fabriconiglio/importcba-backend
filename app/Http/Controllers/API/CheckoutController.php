@@ -166,8 +166,10 @@ class CheckoutController extends Controller
             
 
             
-            $discountAmount = $volumeDiscountAmount; // Por ahora solo descuento por volumen
-            $totalAmount = $subtotal + $shippingCost + $taxAmount - $discountAmount;
+            // En initiate no hay cupones, solo descuento por volumen
+            $discountAmount = 0; // No hay cupones en initiate
+            $totalDiscountAmount = $discountAmount + $volumeDiscountAmount;
+            $totalAmount = $subtotal + $shippingCost + $taxAmount - $totalDiscountAmount;
 
             return response()->json([
                 'success' => true,
@@ -1037,9 +1039,9 @@ class CheckoutController extends Controller
      */
     private function calculateTax(float $subtotal): float
     {
-        // Implementación simplificada - 10% de impuestos
-        // En producción, esto debería integrarse con un servicio de cálculo de impuestos
-        return $subtotal * 0.10;
+        // En Argentina, los precios ya incluyen IVA normalmente
+        // Por ahora retornamos 0, pero esto puede configurarse más adelante
+        return 0.0;
     }
 
     /**
