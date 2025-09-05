@@ -233,8 +233,8 @@ class Product extends Model
             if (str_starts_with($imageUrl, 'http')) {
                 return $imageUrl;
             }
-            // Si es una ruta relativa, la construimos con storage
-            return $imageUrl;
+            // Si es una ruta relativa, la construimos con la URL completa
+            return config('app.url') . '/storage/' . $imageUrl;
         }
         
         // Retornar null para que el frontend use su propia imagen por defecto
