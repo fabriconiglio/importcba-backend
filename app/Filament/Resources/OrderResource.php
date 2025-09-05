@@ -30,6 +30,23 @@ class OrderResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Pedidos';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'pending')->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        $pendingCount = static::getModel()::where('status', 'pending')->count();
+        
+        return match(true) {
+            $pendingCount === 0 => null,
+            $pendingCount >= 5 => 'danger',
+            $pendingCount >= 3 => 'warning',
+            default => 'primary',
+        };
+    }
+
     public static function form(Form $form): Form
     {
         return $form
