@@ -34,7 +34,8 @@ class BannerController extends Controller
      *                     @OA\Property(property="id", type="string", format="uuid"),
      *                     @OA\Property(property="title", type="string", example="MEGA DESCUENTO"),
      *                     @OA\Property(property="description", type="string", example="En utensilios de importadora"),
-     *                     @OA\Property(property="image_url", type="string", example="banners/banner-mega-descuento.jpg"),
+                     *                     @OA\Property(property="image_url", type="string", example="banners/desktop/banner-mega-descuento.jpg"),
+                     *                     @OA\Property(property="mobile_image_url", type="string", example="banners/mobile/banner-mega-descuento-mobile.jpg"),
      *                     @OA\Property(property="link_url", type="string", example="/catalogo?featured=true"),
      *                     @OA\Property(property="link_text", type="string", example="Ver Ofertas"),
      *                     @OA\Property(property="sort_order", type="integer", example=1)
@@ -62,6 +63,7 @@ class BannerController extends Controller
                     'title' => $banner->title,
                     'description' => $banner->description,
                     'image_url' => $banner->image_url,
+                    'mobile_image_url' => $banner->mobile_image_url,
                     'link_url' => $banner->link_url,
                     'link_text' => $banner->link_text,
                     'sort_order' => $banner->sort_order,

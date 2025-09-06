@@ -47,42 +47,82 @@ class BannerResource extends Resource
                                 ->maxLength(500)
                                 ->placeholder('Descripción del banner (opcional)'),
                             
-                            Forms\Components\Group::make([
-                                Forms\Components\FileUpload::make('image_url')
-                                    ->label('Imagen del Banner')
-                                    ->directory('banners')
-                                    ->disk('public')
-                                    ->visibility('public')
-                                    ->image()
-                                    ->imageResizeMode('contain')
-                                    ->imageCropAspectRatio('16:9')
-                                    ->imageResizeTargetWidth(1200)
-                                    ->imageResizeTargetHeight(675)
-                                    ->maxSize(2048)
-                                    ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
-                                    ->previewable(false)
-                                    ->downloadable(false)
-                                    ->openable(false)
-                                    ->deletable(true)
-                                    ->multiple(false)
-                                    ->required()
-                                    ->helperText('Recomendado: 1200x675px o proporción 16:9. Máximo 2MB. Formatos: JPG, PNG, WebP, GIF, SVG')
-                                    ->columnSpan(1),
+                            Forms\Components\Section::make('Imágenes del Banner')
+                                ->description('Sube una imagen para desktop y opcionalmente una optimizada para móvil')
+                                ->schema([
+                                    Forms\Components\Group::make([
+                                        Forms\Components\FileUpload::make('image_url')
+                                            ->label('Imagen Desktop')
+                                            ->directory('banners/desktop')
+                                            ->disk('public')
+                                            ->visibility('public')
+                                            ->image()
+                                            ->imageResizeMode('contain')
+                                            ->imageCropAspectRatio('16:9')
+                                            ->imageResizeTargetWidth(1200)
+                                            ->imageResizeTargetHeight(675)
+                                            ->maxSize(2048)
+                                            ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
+                                            ->previewable(false)
+                                            ->downloadable(false)
+                                            ->openable(false)
+                                            ->deletable(true)
+                                            ->multiple(false)
+                                            ->required()
+                                            ->helperText('Recomendado: 1200x675px o proporción 16:9. Máximo 2MB.')
+                                            ->columnSpan(1),
 
-                                Forms\Components\Placeholder::make('image_preview')
-                                    ->label('Vista previa actual')
-                                    ->content(function ($record) {
-                                        if ($record && $record->image_url) {
-                                            $url = Storage::url($record->image_url);
-                                            return new \Illuminate\Support\HtmlString(
-                                                '<img src="' . $url . '" style="max-width: 300px; max-height: 200px; object-fit: cover; border-radius: 8px;" alt="Banner actual">'
-                                            );
-                                        }
-                                        return 'No hay imagen';
-                                    })
-                                    ->columnSpan(1)
-                                    ->visible(fn ($record) => $record && $record->image_url),
-                            ])->columns(2),
+                                        Forms\Components\Placeholder::make('desktop_preview')
+                                            ->label('Vista previa Desktop')
+                                            ->content(function ($record) {
+                                                if ($record && $record->image_url) {
+                                                    $url = Storage::url($record->image_url);
+                                                    return new \Illuminate\Support\HtmlString(
+                                                        '<img src="' . $url . '" style="max-width: 300px; max-height: 168px; object-fit: cover; border-radius: 8px;" alt="Banner Desktop">'
+                                                    );
+                                                }
+                                                return 'No hay imagen desktop';
+                                            })
+                                            ->columnSpan(1)
+                                            ->visible(fn ($record) => $record && $record->image_url),
+                                    ])->columns(2),
+
+                                    Forms\Components\Group::make([
+                                        Forms\Components\FileUpload::make('mobile_image_url')
+                                            ->label('Imagen Móvil (Opcional)')
+                                            ->directory('banners/mobile')
+                                            ->disk('public')
+                                            ->visibility('public')
+                                            ->image()
+                                            ->imageResizeMode('contain')
+                                            ->imageCropAspectRatio('1:1')
+                                            ->imageResizeTargetWidth(800)
+                                            ->imageResizeTargetHeight(800)
+                                            ->maxSize(2048)
+                                            ->acceptedFileTypes(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
+                                            ->previewable(false)
+                                            ->downloadable(false)
+                                            ->openable(false)
+                                            ->deletable(true)
+                                            ->multiple(false)
+                                            ->helperText('Recomendado: 800x800px o proporción 1:1. Si no se proporciona, se usará la imagen desktop.')
+                                            ->columnSpan(1),
+
+                                        Forms\Components\Placeholder::make('mobile_preview')
+                                            ->label('Vista previa Móvil')
+                                            ->content(function ($record) {
+                                                if ($record && $record->mobile_image_url) {
+                                                    $url = Storage::url($record->mobile_image_url);
+                                                    return new \Illuminate\Support\HtmlString(
+                                                        '<img src="' . $url . '" style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px;" alt="Banner Móvil">'
+                                                    );
+                                                }
+                                                return 'No hay imagen móvil';
+                                            })
+                                            ->columnSpan(1)
+                                            ->visible(fn ($record) => $record && $record->mobile_image_url),
+                                    ])->columns(2),
+                                ])->columnSpanFull(),
                         ])->columns(1),
                 ])->columnSpan(['lg' => 2]),
                 
@@ -126,13 +166,24 @@ class BannerResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('image_url')
-                    ->label('Imagen')
-                    ->height(60)
-                    ->width(100)
+                    ->label('Desktop')
+                    ->height(50)
+                    ->width(90)
                     ->defaultImageUrl(url('/images/placeholder-banner.png'))
-                    ->extraAttributes(['style' => 'object-fit: cover; border-radius: 8px;'])
+                    ->extraAttributes(['style' => 'object-fit: cover; border-radius: 6px;'])
                     ->checkFileExistence(false)
                     ->visibility('public'),
+                
+                Tables\Columns\ImageColumn::make('mobile_image_url')
+                    ->label('Móvil')
+                    ->height(50)
+                    ->width(50)
+                    ->defaultImageUrl(null)
+                    ->extraAttributes(['style' => 'object-fit: cover; border-radius: 6px;'])
+                    ->checkFileExistence(false)
+                    ->visibility('public')
+                    ->placeholder('Sin imagen móvil')
+                    ->tooltip('Imagen optimizada para móvil'),
                 
                 Tables\Columns\TextColumn::make('title')
                     ->label('Título')
