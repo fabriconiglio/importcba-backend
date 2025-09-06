@@ -202,7 +202,44 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('category_id')
+                    ->label('Categoría')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple()
+                    ->placeholder('Seleccionar categorías'),
+                    
+                Tables\Filters\SelectFilter::make('brand_id')
+                    ->label('Marca')
+                    ->relationship('brand', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Seleccionar marca'),
+                    
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Estado')
+                    ->boolean()
+                    ->trueLabel('Solo activos')
+                    ->falseLabel('Solo inactivos')
+                    ->native(false),
+                    
+                Tables\Filters\TernaryFilter::make('is_featured')
+                    ->label('Destacados')
+                    ->boolean()
+                    ->trueLabel('Solo destacados')
+                    ->falseLabel('Solo no destacados')
+                    ->native(false),
+                    
+                Tables\Filters\Filter::make('low_stock')
+                    ->label('Stock bajo')
+                    ->query(fn (Builder $query): Builder => $query->whereRaw('stock_quantity <= min_stock_level'))
+                    ->toggle(),
+                    
+                Tables\Filters\Filter::make('out_of_stock')
+                    ->label('Sin stock')
+                    ->query(fn (Builder $query): Builder => $query->where('stock_quantity', '<=', 0))
+                    ->toggle(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
