@@ -132,9 +132,9 @@ Route::prefix('v1')->group(function () {
         Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('token.rate.limit');
         Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('token.rate.limit');
         
-        // Rutas de autenticación social
-        Route::get('{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
-        Route::get('{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
+        // Rutas de autenticación social (movidas a web.php para manejar sesiones)
+        // Route::get('{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
+        // Route::get('{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
         
         // Rutas protegidas de autenticación
         Route::middleware('auth:sanctum')->group(function () {

@@ -6,6 +6,7 @@ use App\Http\Controllers\API\BaseApiController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -49,7 +50,7 @@ class SocialAuthController extends BaseApiController
                 ], 400);
             }
 
-            $redirectUrl = Socialite::driver($provider)->redirect()->getTargetUrl();
+            $redirectUrl = Socialite::driver($provider)->stateless()->redirect()->getTargetUrl();
 
             return response()->json([
                 'success' => true,
@@ -96,7 +97,7 @@ class SocialAuthController extends BaseApiController
      *     )
      * )
      */
-    public function handleProviderCallback(string $provider, Request $request): JsonResponse
+    public function handleProviderCallback(string $provider, Request $request): JsonResponse|RedirectResponse
     {
         try {
             if (!in_array($provider, ['google', 'facebook'])) {
@@ -107,7 +108,21 @@ class SocialAuthController extends BaseApiController
             }
 
             // Obtener datos del usuario del proveedor OAuth
-            $socialUser = Socialite::driver($provider)->user();
+            try {
+                $socialUser = Socialite::driver($provider)->stateless()->user();
+            } catch (\Laravel\Socialite\Two\InvalidStateException $e) {
+                Log::error("Estado OAuth inválido: " . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Estado de autenticación inválido. Por favor, intenta de nuevo.'
+                ], 400);
+            } catch (\Exception $e) {
+                Log::error("Error obteniendo usuario OAuth: " . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al obtener datos del usuario de ' . $provider
+                ], 400);
+            }
 
             if (!$socialUser) {
                 return response()->json([
@@ -129,24 +144,26 @@ class SocialAuthController extends BaseApiController
             // Generar token
             $token = $user->createToken('social_auth_token')->plainTextToken;
 
-            return response()->json([
-                'success' => true,
-                'message' => '¡Autenticación exitosa!',
-                'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'phone' => $user->phone,
-                        'provider' => $provider,
-                        'provider_id' => $socialUser->getId(),
-                    ],
-                    'token' => $token,
-                ]
-            ]);
+            // Redirigir al frontend con el token
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $redirectUrl = $frontendUrl . '/login?token=' . $token . '&user=' . base64_encode(json_encode([
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'provider' => $provider,
+                'provider_id' => $socialUser->getId(),
+            ]));
+
+            return redirect($redirectUrl);
 
         } catch (\Exception $e) {
-            Log::error("Error en callback OAuth: " . $e->getMessage());
+            Log::error("Error en callback OAuth: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'provider' => $provider
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error en la autenticación social: ' . $e->getMessage()
