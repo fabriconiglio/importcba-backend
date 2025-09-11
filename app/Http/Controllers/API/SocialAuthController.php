@@ -145,7 +145,7 @@ class SocialAuthController extends BaseApiController
             $token = $user->createToken('social_auth_token')->plainTextToken;
 
             // Redirigir al frontend con el token
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $frontendUrl = config('app.frontend_url');
             $redirectUrl = $frontendUrl . '/login?token=' . $token . '&user=' . base64_encode(json_encode([
                 'id' => $user->id,
                 'name' => $user->name,
