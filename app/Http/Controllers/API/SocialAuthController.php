@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * @OA\Tag(
  *     name="Autenticación Social",
- *     description="Endpoints para autenticación con Google y Facebook"
+ *     description="Endpoints para autenticación con Google"
  * )
  */
 class SocialAuthController extends BaseApiController
@@ -31,8 +31,8 @@ class SocialAuthController extends BaseApiController
      *         name="provider",
      *         in="path",
      *         required=true,
-     *         description="Proveedor OAuth (google o facebook)",
-     *         @OA\Schema(type="string", enum={"google", "facebook"})
+     *         description="Proveedor OAuth (google)",
+     *         @OA\Schema(type="string", enum={"google"})
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -43,7 +43,7 @@ class SocialAuthController extends BaseApiController
     public function redirectToProvider(string $provider): JsonResponse
     {
         try {
-            if (!in_array($provider, ['google', 'facebook'])) {
+            if (!in_array($provider, ['google'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Proveedor no soportado'
@@ -78,8 +78,8 @@ class SocialAuthController extends BaseApiController
      *         name="provider",
      *         in="path",
      *         required=true,
-     *         description="Proveedor OAuth (google o facebook)",
-     *         @OA\Schema(type="string", enum={"google", "facebook"})
+     *         description="Proveedor OAuth (google)",
+     *         @OA\Schema(type="string", enum={"google"})
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -100,7 +100,7 @@ class SocialAuthController extends BaseApiController
     public function handleProviderCallback(string $provider, Request $request): JsonResponse|RedirectResponse
     {
         try {
-            if (!in_array($provider, ['google', 'facebook'])) {
+            if (!in_array($provider, ['google'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Proveedor no soportado'
@@ -225,9 +225,6 @@ class SocialAuthController extends BaseApiController
                 case 'google':
                     $name = $socialUser->getNickname() ?: 'Usuario Google';
                     break;
-                case 'facebook':
-                    $name = $socialUser->getNickname() ?: 'Usuario Facebook';
-                    break;
                 default:
                     $name = 'Usuario OAuth';
             }
@@ -248,7 +245,7 @@ class SocialAuthController extends BaseApiController
      *         in="path",
      *         required=true,
      *         description="Proveedor OAuth a desconectar",
-     *         @OA\Schema(type="string", enum={"google", "facebook"})
+     *         @OA\Schema(type="string", enum={"google"})
      *     ),
      *     @OA\Response(
      *         response=200,

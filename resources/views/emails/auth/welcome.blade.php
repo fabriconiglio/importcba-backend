@@ -160,9 +160,6 @@
             <p>&copy; {{ date('Y') }} {{ $companyName }}. Todos los derechos reservados.</p>
             <p>Este email fue enviado a {{ $user->email }}</p>
             <div class="social-links">
-                @if(isset($socialLinks['facebook']))
-                <a href="{{ $socialLinks['facebook'] }}">Facebook</a>
-                @endif
                 @if(isset($socialLinks['instagram']))
                 <a href="{{ $socialLinks['instagram'] }}">Instagram</a>
                 @endif

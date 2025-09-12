@@ -54,7 +54,6 @@ class WelcomeMail extends Mailable
                 'companyName' => config('app.name'),
                 'companyLogo' => config('app.url') . '/images/logo.png',
                 'socialLinks' => [
-                    'facebook' => config('app.social.facebook', '#'),
                     'instagram' => config('app.social.instagram', '#'),
                     'twitter' => config('app.social.twitter', '#'),
                 ],
