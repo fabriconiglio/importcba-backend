@@ -160,14 +160,17 @@ class ProductResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('price')
                     ->label('Precio')
-                    ->money()
+                    ->prefix('$')
+                    ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sale_price')
                     ->label('Precio de oferta')
+                    ->prefix('$')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cost_price')
                     ->label('Precio de costo')
+                    ->prefix('$')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('stock_quantity')
