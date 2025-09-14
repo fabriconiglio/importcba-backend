@@ -16,7 +16,6 @@ use App\Filament\Resources\ProductResource\RelationManagers\ImagesRelationManage
 use App\Filament\Resources\ProductResource\RelationManagers\ProductAttributesRelationManager;
 use App\Exports\ProductsExport;
 use App\Imports\ProductsImport;
-use App\Imports\ProductsImportFixed;
 use App\Models\Category;
 use App\Models\Brand;
 use Maatwebsite\Excel\Facades\Excel;
@@ -297,7 +296,7 @@ class ProductResource extends Resource
                     ])
                     ->action(function (array $data) {
                         try {
-                            $import = new ProductsImportFixed(); // Usar versión corregida temporalmente
+                            $import = new ProductsImport();
                             Excel::import($import, $data['file']);
                             
                             $stats = $import->getStats();
