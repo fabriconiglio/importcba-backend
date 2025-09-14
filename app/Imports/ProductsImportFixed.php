@@ -14,12 +14,12 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-// MOD-002 (main): Creado sistema de importación de productos desde Excel para actualización masiva
+// MOD-003 (main): Versión corregida del sistema de importación con mapeo correcto de headers
 /** 
  * @phpstan-ignore-next-line 
  * @psalm-suppress UndefinedClass
  */
-class ProductsImport implements ToCollection, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading
+class ProductsImportFixed implements ToCollection, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading
 {
     protected $errors = [];
     protected $successCount = 0;
@@ -32,11 +32,6 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithValidation, Wi
     {
         foreach ($rows as $index => $row) {
             try {
-                // Debug: Log de headers en la primera fila para diagnóstico
-                if ($index === 0) {
-                    \Log::info('Headers recibidos del Excel:', array_keys($row->toArray()));
-                }
-                
                 $this->processRow($row, $index + 2); // +2 porque empezamos desde la fila 2 (después del header)
             } catch (\Exception $e) {
                 $this->errorCount++;
@@ -50,9 +45,10 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithValidation, Wi
      */
     protected function processRow($row, $rowNumber)
     {
-        // Buscar el producto por ID o SKU (headers del Excel convertidos por Laravel Excel)
+        // Buscar el producto por ID o SKU
         $product = null;
         
+        // Laravel Excel convierte headers automáticamente: "ID" -> "id", "SKU" -> "sku"
         if (!empty($row['id'])) {
             $product = Product::find($row['id']);
         } elseif (!empty($row['sku'])) {
@@ -66,7 +62,8 @@ class ProductsImport implements ToCollection, WithHeadingRow, WithValidation, Wi
         // Preparar datos para actualización
         $updateData = [];
 
-        // Campos que se pueden actualizar directamente (headers del Excel tal como aparecen)
+        // Mapeo correcto de headers (Laravel Excel convierte automáticamente)
+        // "Nombre" -> "nombre", "Descripción" -> "descripcion", etc.
         $directFields = [
             'nombre' => 'name',
             'descripcion' => 'description', 

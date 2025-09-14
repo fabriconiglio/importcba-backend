@@ -1,4 +1,4 @@
-# Actualización Masiva de Productos mediante Excel
+U# Actualización Masiva de Productos mediante Excel
 
 ## Descripción
 Esta funcionalidad permite actualizar múltiples productos de forma masiva mediante archivos Excel, ideal para actualizar precios, stock y otros datos de productos por categoría o marca.
