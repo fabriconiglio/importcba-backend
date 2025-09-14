@@ -14,6 +14,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ProductResource\RelationManagers\ImagesRelationManager;
 use App\Filament\Resources\ProductResource\RelationManagers\ProductAttributesRelationManager;
+use App\Exports\ProductsExport;
+use App\Imports\ProductsImport;
+use App\Models\Category;
+use App\Models\Brand;
+use Maatwebsite\Excel\Facades\Excel;
+use Filament\Notifications\Notification;
+use Illuminate\Http\UploadedFile;
 
 class ProductResource extends Resource
 {
@@ -248,6 +255,101 @@ class ProductResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])
+            ->headerActions([
+                // MOD-003 (main): Agregadas acciones de exportación e importación masiva de productos
+                Tables\Actions\Action::make('export')
+                    ->label('Exportar Excel')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\Select::make('category_id')
+                            ->label('Filtrar por Categoría (opcional)')
+                            ->options(Category::pluck('name', 'id'))
+                            ->searchable()
+                            ->placeholder('Todas las categorías'),
+                        Forms\Components\Select::make('brand_id')
+                            ->label('Filtrar por Marca (opcional)')
+                            ->options(Brand::pluck('name', 'id'))
+                            ->searchable()
+                            ->placeholder('Todas las marcas'),
+                    ])
+                    ->action(function (array $data) {
+                        $filename = 'productos_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+                        
+                        return Excel::download(
+                            new ProductsExport($data['category_id'] ?? null, $data['brand_id'] ?? null),
+                            $filename
+                        );
+                    }),
+                    
+                Tables\Actions\Action::make('import')
+                    ->label('Importar Excel')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->color('primary')
+                    ->form([
+                        Forms\Components\FileUpload::make('file')
+                            ->label('Archivo Excel')
+                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])
+                            ->required()
+                            ->helperText('Sube un archivo Excel (.xlsx o .xls) con las columnas: ID, Nombre, SKU, Descripción, Categoría, Marca, Precio, Precio Oferta, Stock, Stock Mínimo, Meta Título, Imagen Principal, Activo, Destacado'),
+                    ])
+                    ->action(function (array $data) {
+                        try {
+                            $import = new ProductsImport();
+                            Excel::import($import, $data['file']);
+                            
+                            $stats = $import->getStats();
+                            $errors = $import->getErrors();
+                            
+                            if ($stats['error_count'] > 0) {
+                                $errorMessage = "Importación completada con errores:\n";
+                                $errorMessage .= "✅ {$stats['success_count']} productos actualizados\n";
+                                $errorMessage .= "❌ {$stats['error_count']} errores\n\n";
+                                $errorMessage .= "Errores encontrados:\n" . implode("\n", array_slice($errors, 0, 10));
+                                
+                                if (count($errors) > 10) {
+                                    $errorMessage .= "\n... y " . (count($errors) - 10) . " errores más.";
+                                }
+                                
+                                Notification::make()
+                                    ->title('Importación completada con errores')
+                                    ->body($errorMessage)
+                                    ->warning()
+                                    ->persistent()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Importación exitosa')
+                                    ->body("✅ {$stats['success_count']} productos actualizados correctamente")
+                                    ->success()
+                                    ->send();
+                            }
+                            
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Error en la importación')
+                                ->body('Error: ' . $e->getMessage())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
+                    }),
+                    
+                Tables\Actions\Action::make('download_template')
+                    ->label('Descargar Plantilla')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->action(function () {
+                        // Crear una plantilla vacía con solo los headers
+                        $filename = 'plantilla_productos_' . now()->format('Y-m-d') . '.xlsx';
+                        
+                        return Excel::download(
+                            new ProductsExport(null, null), // Sin filtros para obtener todos los productos como ejemplo
+                            $filename
+                        );
+                    })
+                    ->tooltip('Descarga un archivo Excel con todos los productos actuales para usar como plantilla'),
             ]);
     }
 
