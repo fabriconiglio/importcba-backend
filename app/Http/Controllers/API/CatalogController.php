@@ -263,7 +263,7 @@ class CatalogController extends Controller
                 return $this->transformProduct($product);
             });
 
-            // Obtener estadísticas para filtros
+            // MOD-031 (main): Mejorar estadísticas de filtros con contadores de marcas y categorías
             $allProductsQuery = Product::active();
             $this->applyFilters($allProductsQuery, $request);
 
@@ -274,6 +274,7 @@ class CatalogController extends Controller
             $totalProducts = $allProductsQuery->count();
             $inStockCount = $allProductsQuery->where('stock_quantity', '>', 0)->count();
             $featuredCount = $allProductsQuery->where('is_featured', true)->count();
+            $onSaleCount = $allProductsQuery->whereNotNull('sale_price')->where('sale_price', '>', 0)->count();
 
             return response()->json([
                 'status' => 'success',
@@ -306,7 +307,8 @@ class CatalogController extends Controller
                             ],
                             'total_products' => $totalProducts,
                             'in_stock_count' => $inStockCount,
-                            'featured_count' => $featuredCount
+                            'featured_count' => $featuredCount,
+                            'on_sale_count' => $onSaleCount
                         ]
                     ]
                 ]
