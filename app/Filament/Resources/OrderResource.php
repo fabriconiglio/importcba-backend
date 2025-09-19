@@ -151,6 +151,16 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('cliente')
                     ->label('Cliente')
                     ->getStateUsing(function ($record): string {
+                        // Primero intentar obtener el nombre desde shipping_address
+                        $shippingAddress = $record->shipping_address;
+                        if ($shippingAddress && isset($shippingAddress['first_name']) && isset($shippingAddress['last_name'])) {
+                            $fullName = trim($shippingAddress['first_name'] . ' ' . $shippingAddress['last_name']);
+                            if ($fullName) {
+                                return $fullName;
+                            }
+                        }
+                        
+                        // Fallback al usuario si no hay información en shipping_address
                         $user = $record->user;
                         if (!$user) {
                             return 'Sin cliente';
@@ -160,6 +170,21 @@ class OrderResource extends Resource
                     })
                     ->searchable(false)
                     ->description(fn ($record) => $record->user?->email ?? 'Sin email'),
+                Tables\Columns\TextColumn::make('telefono')
+                    ->label('Teléfono')
+                    ->getStateUsing(function ($record): string {
+                        // Obtener teléfono desde shipping_address
+                        $shippingAddress = $record->shipping_address;
+                        if ($shippingAddress && isset($shippingAddress['phone'])) {
+                            return $shippingAddress['phone'];
+                        }
+                        
+                        // Fallback al usuario si no hay información en shipping_address
+                        return $record->user?->phone ?? 'Sin teléfono';
+                    })
+                    ->searchable(false)
+                    ->copyable()
+                    ->copyMessage('Teléfono copiado'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {

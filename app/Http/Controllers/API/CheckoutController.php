@@ -242,12 +242,12 @@ class CheckoutController extends Controller
      *                 required={"first_name","last_name","address","city","state","postal_code","country","phone"},
      *                 @OA\Property(property="first_name", type="string", example="Juan"),
      *                 @OA\Property(property="last_name", type="string", example="Pérez"),
-     *                 @OA\Property(property="address", type="string", example="Av. Corrientes 1234"),
+     *                 @OA\Property(property="phone", type="string", example="+5491112345678"),
+     *                 @OA\Property(property="street_address", type="string", example="Av. Corrientes 1234"),
      *                 @OA\Property(property="city", type="string", example="Buenos Aires"),
      *                 @OA\Property(property="state", type="string", example="Buenos Aires"),
      *                 @OA\Property(property="postal_code", type="string", example="1043"),
-     *                 @OA\Property(property="country", type="string", example="Argentina"),
-     *                 @OA\Property(property="phone", type="string", example="+5491112345678")
+     *                 @OA\Property(property="country", type="string", example="Argentina")
      *             ),
      *             @OA\Property(
      *                 property="billing_address",
@@ -300,6 +300,9 @@ class CheckoutController extends Controller
             $validator = Validator::make($request->all(), [
                 'shipping_method_id' => 'required|string|exists:shipping_methods,id',
                 'shipping_address' => 'required|array',
+                'shipping_address.first_name' => 'required|string',
+                'shipping_address.last_name' => 'required|string',
+                'shipping_address.phone' => 'required|string',
                 'shipping_address.street_address' => 'required|string',
                 'shipping_address.city' => 'required|string',
                 'shipping_address.state' => 'required|string',
@@ -473,12 +476,12 @@ class CheckoutController extends Controller
      *                 required={"first_name","last_name","address","city","state","postal_code","country","phone"},
      *                 @OA\Property(property="first_name", type="string", example="Juan"),
      *                 @OA\Property(property="last_name", type="string", example="Pérez"),
-     *                 @OA\Property(property="address", type="string", example="Av. Corrientes 1234"),
+     *                 @OA\Property(property="phone", type="string", example="+5491112345678"),
+     *                 @OA\Property(property="street_address", type="string", example="Av. Corrientes 1234"),
      *                 @OA\Property(property="city", type="string", example="Buenos Aires"),
      *                 @OA\Property(property="state", type="string", example="Buenos Aires"),
      *                 @OA\Property(property="postal_code", type="string", example="1043"),
-     *                 @OA\Property(property="country", type="string", example="Argentina"),
-     *                 @OA\Property(property="phone", type="string", example="+5491112345678")
+     *                 @OA\Property(property="country", type="string", example="Argentina")
      *             ),
      *             @OA\Property(
      *                 property="billing_address",
@@ -531,6 +534,9 @@ class CheckoutController extends Controller
                 'shipping_method_id' => 'required|string|exists:shipping_methods,id',
                 'payment_method_id' => 'required|string|exists:payment_methods,id',
                 'shipping_address' => 'required|array',
+                'shipping_address.first_name' => 'required|string',
+                'shipping_address.last_name' => 'required|string',
+                'shipping_address.phone' => 'required|string',
                 'shipping_address.street_address' => 'required|string',
                 'shipping_address.city' => 'required|string',
                 'shipping_address.state' => 'required|string',
