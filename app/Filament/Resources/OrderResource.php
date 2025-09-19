@@ -170,21 +170,6 @@ class OrderResource extends Resource
                     })
                     ->searchable(false)
                     ->description(fn ($record) => $record->user?->email ?? 'Sin email'),
-                Tables\Columns\TextColumn::make('telefono')
-                    ->label('Teléfono')
-                    ->getStateUsing(function ($record): string {
-                        // Obtener teléfono desde shipping_address
-                        $shippingAddress = $record->shipping_address;
-                        if ($shippingAddress && isset($shippingAddress['phone'])) {
-                            return $shippingAddress['phone'];
-                        }
-                        
-                        // Fallback al usuario si no hay información en shipping_address
-                        return $record->user?->phone ?? 'Sin teléfono';
-                    })
-                    ->searchable(false)
-                    ->copyable()
-                    ->copyMessage('Teléfono copiado'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {

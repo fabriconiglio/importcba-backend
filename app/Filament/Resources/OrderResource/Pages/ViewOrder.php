@@ -76,7 +76,7 @@ class ViewOrder extends ViewRecord
 
                 Infolists\Components\Section::make('Cliente')
                     ->schema([
-                        Infolists\Components\TextEntry::make('cliente_nombre')
+                         Infolists\Components\TextEntry::make('cliente_nombre')
                             ->label('Nombre')
                             ->getStateUsing(function ($record): string {
                                 // Primero intentar obtener el nombre desde shipping_address
