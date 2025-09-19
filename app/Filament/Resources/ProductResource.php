@@ -268,6 +268,7 @@ class ProductResource extends Resource
                     ->label('Exportar Excel')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
+                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
                     ->form([
                         Forms\Components\Select::make('category_id')
                             ->label('Filtrar por Categoría (opcional)')
@@ -293,6 +294,7 @@ class ProductResource extends Resource
                     ->label('Importar Excel')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('primary')
+                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
                     ->form([
                         Forms\Components\FileUpload::make('file')
                             ->label('Archivo Excel')
@@ -346,6 +348,7 @@ class ProductResource extends Resource
                     ->label('Descargar Plantilla')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('gray')
+                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
                     ->action(function () {
                         // Crear una plantilla vacía con solo los headers
                         $filename = 'plantilla_productos_' . now()->format('Y-m-d') . '.xlsx';
@@ -362,6 +365,7 @@ class ProductResource extends Resource
                     ->label('Plantilla Nuevos Productos')
                     ->icon('heroicon-o-plus-circle')
                     ->color('info')
+                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
                     ->action(function () {
                         $filename = 'plantilla_nuevos_productos_' . now()->format('Y-m-d') . '.xlsx';
                         
@@ -376,6 +380,7 @@ class ProductResource extends Resource
                     ->label('Crear Productos desde Excel')
                     ->icon('heroicon-o-plus')
                     ->color('warning')
+                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
                     ->form([
                         Forms\Components\FileUpload::make('file')
                             ->label('Archivo Excel para Nuevos Productos')
@@ -453,6 +458,7 @@ class ProductResource extends Resource
                     ->label('Asignar Marcas Masivamente')
                     ->icon('heroicon-o-tag')
                     ->color('purple')
+                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
                     ->form([
                         Forms\Components\Select::make('category_id')
                             ->label('Filtrar por Categoría (opcional)')
