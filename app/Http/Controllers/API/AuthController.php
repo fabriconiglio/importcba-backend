@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Log;
+use App\Services\EmailService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password as PasswordRules;
@@ -116,6 +117,32 @@ class AuthController extends BaseApiController
 
             // Asignar rol de cliente
             $user->assignRole('customer');
+
+            // Enviar email de bienvenida
+            try {
+                $emailService = new EmailService();
+                $emailResult = $emailService->sendWelcome($user);
+                
+                if ($emailResult['success']) {
+                    Log::info('Email de bienvenida enviado correctamente', [
+                        'user_id' => $user->id,
+                        'email' => $user->email
+                    ]);
+                } else {
+                    Log::warning('Error enviando email de bienvenida', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                        'error' => $emailResult['message']
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error enviando email de bienvenida', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'exception' => $e->getMessage()
+                ]);
+                // No fallar el registro por el email
+            }
 
             // Crear token para el usuario
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -417,20 +444,62 @@ class AuthController extends BaseApiController
                 ], 422);
             }
 
-            $status = Password::sendResetLink(
-                $request->only('email')
-            );
+            // Verificar que el usuario existe
+            $user = User::where('email', $request->email)->first();
+            if (!$user) {
+                // Por seguridad, siempre devolvemos success
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Si el email existe, recibirás un enlace de recuperación'
+                ]);
+            }
 
-            if ($status === Password::RESET_LINK_SENT) {
+            // Intentar primero con el sistema nativo de Laravel
+            try {
+                $status = Password::sendResetLink(
+                    $request->only('email')
+                );
+
+                if ($status === Password::RESET_LINK_SENT) {
+                    Log::info('Email de recuperación enviado via Laravel Password', [
+                        'email' => $request->email
+                    ]);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Email de recuperación enviado correctamente'
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Error enviando email via Laravel Password, intentando con Brevo API', [
+                    'email' => $request->email,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Fallback: usar EmailService con Brevo API
+            $token = Password::getRepository()->create($user);
+            $emailService = new EmailService();
+            
+            $result = $emailService->sendPasswordReset($user, $token);
+            
+            if ($result['success']) {
+                Log::info('Email de recuperación enviado via Brevo API', [
+                    'email' => $request->email
+                ]);
+                
                 return response()->json([
                     'success' => true,
                     'message' => 'Email de recuperación enviado correctamente'
                 ]);
+            } else {
+                Log::error('Error enviando email de recuperación via Brevo API', [
+                    'email' => $request->email,
+                    'error' => $result['message']
+                ]);
+                
+                throw new \Exception($result['message']);
             }
-
-            throw ValidationException::withMessages([
-                'email' => [trans($status)],
-            ]);
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -439,6 +508,11 @@ class AuthController extends BaseApiController
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            Log::error('Error en forgotPassword', [
+                'email' => $request->email ?? 'unknown',
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al enviar email de recuperación: ' . $e->getMessage()

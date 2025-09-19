@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Log;
+use App\Services\EmailService;
 
 /**
  * @OA\Tag(
@@ -181,12 +182,20 @@ class SocialAuthController extends BaseApiController
             $user = User::where('email', $socialUser->getEmail())->first();
 
             if ($user) {
-                // Usuario existe, actualizar información del proveedor
+                // Usuario existe, verificar si es la primera vez que se conecta vía OAuth
+                $isFirstOAuthConnection = empty($user->provider) || empty($user->provider_id);
+                
+                // Actualizar información del proveedor
                 $user->update([
                     'provider' => $provider,
                     'provider_id' => $socialUser->getId(),
                     'email_verified_at' => now(), // Email verificado por OAuth
                 ]);
+
+                // Si es la primera conexión OAuth, enviar email de bienvenida
+                if ($isFirstOAuthConnection) {
+                    $this->sendWelcomeEmail($user, 'primera conexión con ' . $provider);
+                }
 
                 return $user;
             }
@@ -203,6 +212,9 @@ class SocialAuthController extends BaseApiController
 
             // Asignar rol de cliente
             $user->assignRole('customer');
+
+            // Enviar email de bienvenida para usuarios nuevos
+            $this->sendWelcomeEmail($user, 'registro vía ' . $provider);
 
             return $user;
 
@@ -231,6 +243,40 @@ class SocialAuthController extends BaseApiController
         }
 
         return $name;
+    }
+
+    /**
+     * Enviar email de bienvenida
+     */
+    private function sendWelcomeEmail(User $user, string $context): void
+    {
+        try {
+            $emailService = new EmailService();
+            $emailResult = $emailService->sendWelcome($user);
+            
+            if ($emailResult['success']) {
+                Log::info('Email de bienvenida enviado correctamente via OAuth', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'context' => $context
+                ]);
+            } else {
+                Log::warning('Error enviando email de bienvenida via OAuth', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'context' => $context,
+                    'error' => $emailResult['message']
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error enviando email de bienvenida via OAuth', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'context' => $context,
+                'exception' => $e->getMessage()
+            ]);
+            // No fallar la autenticación OAuth por el email
+        }
     }
 
     /**
