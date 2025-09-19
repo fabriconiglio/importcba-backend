@@ -20,7 +20,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -42,7 +42,7 @@
         .order-number {
             font-size: 18px;
             font-weight: bold;
-            color: #667eea;
+            color: #2563eb;
             margin-bottom: 10px;
         }
         .order-date {
@@ -102,7 +102,7 @@
         }
         .address h3 {
             margin: 0 0 10px 0;
-            color: #667eea;
+            color: #2563eb;
             font-size: 16px;
         }
         .address p {
@@ -111,13 +111,19 @@
         }
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white !important;
             padding: 15px 30px;
             text-decoration: none;
-            border-radius: 25px;
-            font-weight: 500;
+            border-radius: 8px;
+            font-weight: 600;
             margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+            transition: all 0.3s ease;
+        }
+        .cta-button:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
         }
         .footer {
             background-color: #f8f9fa;
@@ -132,7 +138,7 @@
         .social-links a {
             display: inline-block;
             margin: 0 10px;
-            color: #667eea;
+            color: #2563eb;
             text-decoration: none;
         }
         @media (max-width: 600px) {

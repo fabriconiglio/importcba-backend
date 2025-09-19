@@ -53,7 +53,7 @@ class OrderConfirmationMail extends Mailable
                 'items' => $this->order->items,
                 'shippingAddress' => $this->order->shipping_address,
                 'billingAddress' => $this->order->billing_address,
-                'orderUrl' => config('app.frontend_url') . "/orders/{$this->order->id}",
+                'orderUrl' => config('app.frontend_url') . "/pedidos/{$this->order->id}",
                 'supportEmail' => config('mail.from.address'),
                 'companyName' => config('app.name'),
                 'companyLogo' => config('app.url') . '/images/logo.png',

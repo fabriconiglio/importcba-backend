@@ -46,7 +46,7 @@ class EmailService
                     'items' => $order->items,
                     'shippingAddress' => $order->shipping_address,
                     'billingAddress' => $order->billing_address,
-                    'orderUrl' => config('app.frontend_url') . "/orders/{$order->id}",
+                    'orderUrl' => config('app.frontend_url') . "/pedidos/{$order->id}",
                     'supportEmail' => config('mail.from.address'),
                     'companyName' => config('app.name'),
                     'companyLogo' => config('app.url') . '/images/logo.png',

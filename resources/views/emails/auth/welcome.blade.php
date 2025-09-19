@@ -20,7 +20,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         .header {
-            background: #2563eb;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -38,7 +38,7 @@
             margin: 30px 0;
         }
         .welcome-message h2 {
-            color: #667eea;
+            color: #2563eb;
             margin-bottom: 15px;
         }
         .features {
@@ -74,16 +74,18 @@
         }
         .cta-button {
             display: inline-block;
-            background: #2563eb;
-            color: white;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white !important;
             padding: 15px 30px;
             text-decoration: none;
-            border-radius: 25px;
-            font-weight: 500;
+            border-radius: 8px;
+            font-weight: 600;
             margin: 10px;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
         }
         .cta-button.secondary {
-            background: #6c757d;
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white !important;
         }
         .footer {
             background-color: #f8f9fa;
