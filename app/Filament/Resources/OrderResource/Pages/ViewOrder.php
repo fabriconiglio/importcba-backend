@@ -52,6 +52,15 @@ class ViewOrder extends ViewRecord
                         Infolists\Components\TextEntry::make('status')
                             ->label('Estado')
                             ->badge()
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'pending' => 'Pendiente',
+                                'confirmed' => 'Confirmado',
+                                'processing' => 'Procesando',
+                                'shipped' => 'Enviado',
+                                'delivered' => 'Entregado',
+                                'cancelled' => 'Cancelado',
+                                default => $state,
+                            })
                             ->color(fn (string $state): string => match ($state) {
                                 'pending' => 'warning',
                                 'confirmed' => 'info',
@@ -64,6 +73,13 @@ class ViewOrder extends ViewRecord
                         Infolists\Components\TextEntry::make('payment_status')
                             ->label('Estado del Pago')
                             ->badge()
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'pending' => 'Pendiente',
+                                'paid' => 'Pagado',
+                                'failed' => 'Fallido',
+                                'refunded' => 'Reembolsado',
+                                default => $state,
+                            })
                             ->color(fn (string $state): string => match ($state) {
                                 'pending' => 'warning',
                                 'paid' => 'success',
