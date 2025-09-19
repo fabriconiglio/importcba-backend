@@ -38,11 +38,18 @@
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: white !important;
             padding: 15px 30px;
-            text-decoration: none;
+            text-decoration: none !important;
             border-radius: 8px;
             font-weight: 600;
             margin: 20px 0;
             box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+        }
+        .reset-button:link,
+        .reset-button:visited,
+        .reset-button:hover,
+        .reset-button:active {
+            color: white !important;
+            text-decoration: none !important;
         }
         .warning-box {
             background-color: #fff3cd;

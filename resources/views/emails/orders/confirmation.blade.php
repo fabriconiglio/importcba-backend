@@ -125,6 +125,13 @@
             background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
             box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
         }
+        .cta-button:link,
+        .cta-button:visited,
+        .cta-button:hover,
+        .cta-button:active {
+            color: white !important;
+            text-decoration: none !important;
+        }
         .footer {
             background-color: #f8f9fa;
             padding: 20px;

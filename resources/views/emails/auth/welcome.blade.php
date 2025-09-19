@@ -87,6 +87,20 @@
             background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
             color: white !important;
         }
+        .cta-button:link,
+        .cta-button:visited,
+        .cta-button:hover,
+        .cta-button:active {
+            color: white !important;
+            text-decoration: none !important;
+        }
+        .cta-button.secondary:link,
+        .cta-button.secondary:visited,
+        .cta-button.secondary:hover,
+        .cta-button.secondary:active {
+            color: white !important;
+            text-decoration: none !important;
+        }
         .footer {
             background-color: #f8f9fa;
             padding: 20px;
