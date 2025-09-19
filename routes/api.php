@@ -23,6 +23,7 @@ use App\Http\Controllers\API\SocialAuthController;
 use App\Http\Controllers\API\NewsletterController;
 use App\Http\Controllers\API\SiteConfigController;
 use App\Http\Controllers\API\VolumeDiscountController;
+use App\Http\Controllers\API\CacheController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,14 +48,16 @@ Route::prefix('v1')->group(function () {
     // PRODUCTOS
     // =============================================
     
-    // Rutas específicas (deben ir ANTES del apiResource para evitar conflictos)
-    Route::get('products/search', [ProductController::class, 'search']);
-    Route::get('products/category/{categorySlug}', [ProductController::class, 'byCategory']);
-    Route::get('products/featured/list', [ProductController::class, 'featured']);
-    Route::get('products/{id}/images', [ProductController::class, 'images']);
-    
-    // Rutas RESTful generales
-    Route::apiResource('products', ProductController::class);
+    // MOD-101 (main): Rutas específicas con middleware anti-cache
+    Route::middleware('no.cache')->group(function () {
+        Route::get('products/search', [ProductController::class, 'search']);
+        Route::get('products/category/{categorySlug}', [ProductController::class, 'byCategory']);
+        Route::get('products/featured/list', [ProductController::class, 'featured']);
+        Route::get('products/{id}/images', [ProductController::class, 'images']);
+        
+        // Rutas RESTful generales también sin cache
+        Route::apiResource('products', ProductController::class, ['only' => ['index', 'show']]);
+    });
 
     // =============================================
     // CATÁLOGO SEO-FRIENDLY
@@ -132,6 +135,14 @@ Route::prefix('v1')->group(function () {
     // CONFIGURACIÓN DEL SITIO
     // =============================================
     Route::get('site-config/bank-details', [SiteConfigController::class, 'getBankDetails']);
+    
+    // =============================================
+    // CACHE MANAGEMENT (PÚBLICO)
+    // =============================================
+    Route::prefix('cache')->group(function () {
+        Route::get('timestamp', [CacheController::class, 'getCacheBustingTimestamp']);
+        Route::get('status', [CacheController::class, 'getCacheStatus']);
+    });
     
     // =============================================
     // AUTENTICACIÓN
@@ -285,6 +296,14 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     // NEWSLETTER (ADMIN)
     // =============================================
     Route::get('newsletter/stats', [NewsletterController::class, 'stats']);
+    
+    // =============================================
+    // CACHE MANAGEMENT (ADMIN)
+    // =============================================
+    Route::prefix('cache')->group(function () {
+        Route::post('clear', [CacheController::class, 'clearCache']);
+        Route::post('invalidate-images', [CacheController::class, 'invalidateImageCache']);
+    });
     
     // =============================================
     // FAVORITOS (para futuro)

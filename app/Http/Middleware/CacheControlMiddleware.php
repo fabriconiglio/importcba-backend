@@ -17,21 +17,31 @@ class CacheControlMiddleware
     {
         $response = $next($request);
 
-        // Solo aplicar cache a archivos estáticos
+        // MOD-102 (main): Cache diferenciado para archivos estáticos
         if ($request->is('storage/*') || $request->is('*/storage/*')) {
-            $response->headers->set('Cache-Control', 'public, max-age=31536000'); // 1 año
-            $response->headers->set('Expires', gmdate('D, d M Y H:i:s \G\M\T', time() + 31536000));
+            // Para productos subidos dinámicamente, cache moderado
+            $response->headers->set('Cache-Control', 'public, max-age=3600'); // 1 hora
+            $response->headers->set('Expires', gmdate('D, d M Y H:i:s \G\M\T', time() + 3600));
             
             // Añadir ETag para validación de cache
             if ($request->isMethod('GET')) {
-                $etag = md5($request->getPathInfo() . filemtime(public_path($request->getPathInfo())));
-                $response->headers->set('ETag', '"' . $etag . '"');
-                
-                // Si el cliente tiene la misma versión, retornar 304
-                if ($request->header('If-None-Match') === '"' . $etag . '"') {
-                    return response('', 304);
+                $filePath = public_path($request->getPathInfo());
+                if (file_exists($filePath)) {
+                    $etag = md5($request->getPathInfo() . filemtime($filePath));
+                    $response->headers->set('ETag', '"' . $etag . '"');
+                    
+                    // Si el cliente tiene la misma versión, retornar 304
+                    if ($request->header('If-None-Match') === '"' . $etag . '"') {
+                        return response('', 304);
+                    }
                 }
             }
+        }
+        
+        // Para imágenes por defecto del frontend, cache muy corto
+        if ($request->is('image/*') || $request->is('*/image/*')) {
+            $response->headers->set('Cache-Control', 'public, max-age=300'); // 5 minutos
+            $response->headers->set('Expires', gmdate('D, d M Y H:i:s \G\M\T', time() + 300));
         }
 
         return $response;

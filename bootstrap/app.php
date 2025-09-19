@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'token.rate.limit' => \App\Http\Middleware\TokenRateLimit::class,
             'cache.control' => \App\Http\Middleware\CacheControlMiddleware::class,
+            'no.cache' => \App\Http\Middleware\NoCacheMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

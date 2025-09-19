@@ -243,10 +243,15 @@ class ProductController extends BaseApiController
                 'total' => $products->total(),
             ];
 
+            // MOD-101 (main): Agregar headers anti-cache para listado de productos
             return response()->json([
                 'success' => true,
                 'data' => $payload,
                 'message' => 'Productos obtenidos correctamente'
+            ])->withHeaders([
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0'
             ]);
 
         } catch (\Exception $e) {
@@ -580,10 +585,15 @@ class ProductController extends BaseApiController
                 ];
             });
 
+            // MOD-101 (main): Retornar respuesta con headers anti-cache configurados
             return response()->json([
                 'success' => true,
                 'data' => $products,
                 'message' => 'Productos destacados obtenidos correctamente'
+            ])->withHeaders([
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0'
             ]);
 
         } catch (\Exception $e) {

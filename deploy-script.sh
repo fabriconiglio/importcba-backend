@@ -11,6 +11,8 @@ echo "Starting deployment..."
 PROJECT_DIR="/var/www/importcba-backend"
 BACKUP_DIR="/var/www/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+# MOD-101 (main): Detectar entorno de producción
+ENVIRONMENT=${APP_ENV:-production}
 
 # Crear directorio de backups si no existe
 mkdir -p $BACKUP_DIR
@@ -93,6 +95,28 @@ php artisan config:clear
 php artisan cache:clear
 php artisan route:clear
 php artisan view:clear
+
+# MOD-101 (main): Limpiar productos de prueba en producción
+echo "Cleaning test products from production..."
+if [ "$ENVIRONMENT" = "production" ]; then
+    php artisan tinker --execute="
+    \$testProducts = \App\Models\Product::where('name', 'LIKE', '%prueba%')
+        ->orWhere('name', 'LIKE', '%test%')
+        ->orWhere('name', 'LIKE', '%mock%')
+        ->orWhere('description', 'LIKE', '%Producto de alta calidad.%')
+        ->get();
+    \$count = \$testProducts->count();
+    if (\$count > 0) {
+        echo \"Eliminando {\$count} productos de prueba...\n\";
+        \$testProducts->each->delete();
+        echo \"Productos de prueba eliminados.\n\";
+    } else {
+        echo \"No se encontraron productos de prueba.\n\";
+    }
+    "
+else
+    echo "Skipping test product cleanup (not production environment)"
+fi
 
 # Cache config and routes for production - AGREGADO
 echo "Caching configuration..."
