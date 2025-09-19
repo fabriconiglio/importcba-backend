@@ -76,12 +76,37 @@ class ViewOrder extends ViewRecord
 
                 Infolists\Components\Section::make('Cliente')
                     ->schema([
-                        Infolists\Components\TextEntry::make('user.first_name')
-                            ->label('Nombre'),
+                        Infolists\Components\TextEntry::make('cliente_nombre')
+                            ->label('Nombre')
+                            ->getStateUsing(function ($record): string {
+                                // Primero intentar obtener el nombre desde shipping_address
+                                $shippingAddress = $record->shipping_address;
+                                if ($shippingAddress && isset($shippingAddress['first_name']) && isset($shippingAddress['last_name'])) {
+                                    return trim($shippingAddress['first_name'] . ' ' . $shippingAddress['last_name']);
+                                }
+                                
+                                // Fallback al usuario si no hay información en shipping_address
+                                $user = $record->user;
+                                if ($user) {
+                                    return trim($user->first_name . ' ' . ($user->last_name ?? ''));
+                                }
+                                
+                                return 'Sin nombre';
+                            }),
                         Infolists\Components\TextEntry::make('user.email')
                             ->label('Email'),
-                        Infolists\Components\TextEntry::make('user.phone')
-                            ->label('Teléfono'),
+                        Infolists\Components\TextEntry::make('cliente_telefono')
+                            ->label('Teléfono')
+                            ->getStateUsing(function ($record): string {
+                                // Obtener teléfono desde shipping_address
+                                $shippingAddress = $record->shipping_address;
+                                if ($shippingAddress && isset($shippingAddress['phone'])) {
+                                    return $shippingAddress['phone'];
+                                }
+                                
+                                // Fallback al usuario si no hay información en shipping_address
+                                return $record->user?->phone ?? 'Sin teléfono';
+                            }),
                     ])
                     ->columns(3),
 
