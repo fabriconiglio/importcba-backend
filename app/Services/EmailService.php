@@ -73,83 +73,57 @@ class EmailService
     public function sendPasswordReset(User $user, string $token): array
     {
         try {
-            // Intentar primero con SMTP
-            Mail::to($user->email)
-                ->send(new PasswordResetMail($user, $token));
-
-            Log::info('Email de recuperación de contraseña enviado via SMTP', [
-                'user_id' => $user->id,
-                'user_email' => $user->email
+            // Usar directamente Brevo API (SMTP está bloqueado en producción)
+            $resetUrl = config('app.frontend_url') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+            
+            $result = $this->brevoApi->sendEmail([
+                'to_email' => $user->email,
+                'to_name' => $user->name,
+                'subject' => 'Recuperar contraseña - ' . config('app.name'),
+                'html_content' => view('emails.auth.password-reset', [
+                    'user' => $user,
+                    'token' => $token,
+                    'resetUrl' => $resetUrl,
+                    'companyName' => config('app.name'),
+                    'frontendUrl' => config('app.frontend_url'),
+                    'supportEmail' => config('mail.from.address'),
+                    'expiresAt' => now()->addHours(1)->format('d/m/Y H:i'),
+                    'companyLogo' => config('app.url') . '/images/logo.png',
+                ])->render(),
+                'sender_email' => config('mail.from.address'),
+                'sender_name' => config('mail.from.name'),
             ]);
 
-            return [
-                'success' => true,
-                'message' => 'Email de recuperación enviado correctamente',
-                'data' => [
+            if ($result['success']) {
+                Log::info('Email de recuperación de contraseña enviado via Brevo API', [
                     'user_id' => $user->id,
                     'user_email' => $user->email
-                ]
-            ];
-
-        } catch (\Exception $e) {
-            Log::warning('Error enviando email de recuperación via SMTP, intentando con Brevo API', [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'smtp_error' => $e->getMessage()
-            ]);
-
-            // Fallback: usar Brevo API
-            try {
-                $resetUrl = config('app.frontend_url') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
-                
-                $result = $this->brevoApi->sendEmail([
-                    'to_email' => $user->email,
-                    'to_name' => $user->name,
-                    'subject' => 'Recuperar contraseña - ' . config('app.name'),
-                    'html_content' => view('emails.auth.password-reset', [
-                        'user' => $user,
-                        'token' => $token,
-                        'resetUrl' => $resetUrl,
-                        'companyName' => config('app.name'),
-                        'frontendUrl' => config('app.frontend_url'),
-                        'supportEmail' => config('mail.from.address'),
-                    ])->render(),
-                    'sender_email' => config('mail.from.address'),
-                    'sender_name' => config('mail.from.name'),
-                ]);
-
-                if ($result['success']) {
-                    Log::info('Email de recuperación de contraseña enviado via Brevo API', [
-                        'user_id' => $user->id,
-                        'user_email' => $user->email
-                    ]);
-
-                    return [
-                        'success' => true,
-                        'message' => 'Email de recuperación enviado correctamente via API',
-                        'data' => [
-                            'user_id' => $user->id,
-                            'user_email' => $user->email,
-                            'method' => 'brevo_api'
-                        ]
-                    ];
-                } else {
-                    throw new \Exception($result['message']);
-                }
-
-            } catch (\Exception $apiException) {
-                Log::error('Error al enviar email de recuperación via Brevo API: ' . $apiException->getMessage(), [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'smtp_error' => $e->getMessage(),
-                    'api_error' => $apiException->getMessage()
                 ]);
 
                 return [
-                    'success' => false,
-                    'message' => 'Error al enviar email de recuperación: ' . $apiException->getMessage()
+                    'success' => true,
+                    'message' => 'Email de recuperación enviado correctamente',
+                    'data' => [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email,
+                        'method' => 'brevo_api'
+                    ]
                 ];
+            } else {
+                throw new \Exception($result['message']);
             }
+
+        } catch (\Exception $e) {
+            Log::error('Error al enviar email de recuperación via Brevo API: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'api_error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error al enviar email de recuperación: ' . $e->getMessage()
+            ];
         }
     }
 
