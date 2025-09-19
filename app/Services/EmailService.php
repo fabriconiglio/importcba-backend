@@ -7,11 +7,18 @@ use App\Models\Order;
 use App\Mail\OrderConfirmationMail;
 use App\Mail\PasswordResetMail;
 use App\Mail\WelcomeMail;
+use App\Services\BrevoApiService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
 class EmailService
 {
+    private BrevoApiService $brevoApi;
+
+    public function __construct()
+    {
+        $this->brevoApi = new BrevoApiService();
+    }
     /**
      * Enviar email de confirmación de pedido
      */
@@ -294,6 +301,52 @@ class EmailService
                 'message' => 'Error al verificar configuración: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Enviar email simple usando API de Brevo
+     */
+    public function sendSimpleEmailViaApi(string $toEmail, string $toName, string $subject, string $content): array
+    {
+        try {
+            $result = $this->brevoApi->sendEmail([
+                'to_email' => $toEmail,
+                'to_name' => $toName,
+                'subject' => $subject,
+                'text_content' => $content,
+                'sender_email' => config('mail.from.address'),
+                'sender_name' => config('mail.from.name'),
+            ]);
+
+            if ($result['success']) {
+                Log::info('Email simple enviado via Brevo API', [
+                    'to_email' => $toEmail,
+                    'subject' => $subject,
+                ]);
+            }
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Error enviando email simple via Brevo API: ' . $e->getMessage(), [
+                'to_email' => $toEmail,
+                'subject' => $subject,
+                'exception' => $e
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error al enviar email simple: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Probar conexión con Brevo API
+     */
+    public function testBrevoApi(): array
+    {
+        return $this->brevoApi->testConnection();
     }
 
     /**
