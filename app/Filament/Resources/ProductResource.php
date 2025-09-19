@@ -15,7 +15,10 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ProductResource\RelationManagers\ImagesRelationManager;
 use App\Filament\Resources\ProductResource\RelationManagers\ProductAttributesRelationManager;
 use App\Exports\ProductsExport;
+use App\Exports\ProductCreateTemplateExport;
+use App\Exports\ProductBrandAssignmentExport;
 use App\Imports\ProductsImport;
+use App\Imports\ProductsCreateImport;
 use App\Models\Category;
 use App\Models\Brand;
 use Maatwebsite\Excel\Facades\Excel;
@@ -353,6 +356,129 @@ class ProductResource extends Resource
                         );
                     })
                     ->tooltip('Descarga un archivo Excel con todos los productos actuales para usar como plantilla'),
+                    
+                // MOD-026 (main): Agregadas acciones para crear nuevos productos desde Excel
+                Tables\Actions\Action::make('create_template')
+                    ->label('Plantilla Nuevos Productos')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('info')
+                    ->action(function () {
+                        $filename = 'plantilla_nuevos_productos_' . now()->format('Y-m-d') . '.xlsx';
+                        
+                        return Excel::download(
+                            new ProductCreateTemplateExport(),
+                            $filename
+                        );
+                    })
+                    ->tooltip('Descarga una plantilla con ejemplos para crear nuevos productos'),
+                    
+                Tables\Actions\Action::make('import_create')
+                    ->label('Crear Productos desde Excel')
+                    ->icon('heroicon-o-plus')
+                    ->color('warning')
+                    ->form([
+                        Forms\Components\FileUpload::make('file')
+                            ->label('Archivo Excel para Nuevos Productos')
+                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])
+                            ->required()
+                            ->helperText('Sube un archivo Excel (.xlsx o .xls) para crear nuevos productos. Usa la "Plantilla Nuevos Productos" como guía. Columnas obligatorias: NOMBRE, PRECIO.'),
+                    ])
+                    ->action(function (array $data) {
+                        try {
+                            $import = new ProductsCreateImport();
+                            Excel::import($import, $data['file']);
+                            
+                            $stats = $import->getStats();
+                            $errors = $import->getErrors();
+                            $createdProducts = $import->getCreatedProducts();
+                            
+                            if ($stats['error_count'] > 0) {
+                                $errorMessage = "Creación completada con errores:\n";
+                                $errorMessage .= "✅ {$stats['success_count']} productos creados\n";
+                                $errorMessage .= "❌ {$stats['error_count']} errores\n\n";
+                                $errorMessage .= "Productos creados:\n";
+                                
+                                foreach (array_slice($createdProducts, 0, 5) as $product) {
+                                    $errorMessage .= "• {$product['name']} (SKU: {$product['sku']}, Precio: $" . number_format($product['price'], 2) . ")\n";
+                                }
+                                
+                                if (count($createdProducts) > 5) {
+                                    $errorMessage .= "... y " . (count($createdProducts) - 5) . " productos más.\n";
+                                }
+                                
+                                $errorMessage .= "\nErrores encontrados:\n" . implode("\n", array_slice($errors, 0, 10));
+                                
+                                if (count($errors) > 10) {
+                                    $errorMessage .= "\n... y " . (count($errors) - 10) . " errores más.";
+                                }
+                                
+                                Notification::make()
+                                    ->title('Creación completada con errores')
+                                    ->body($errorMessage)
+                                    ->warning()
+                                    ->persistent()
+                                    ->send();
+                            } else {
+                                $successMessage = "✅ {$stats['success_count']} productos creados correctamente\n\n";
+                                $successMessage .= "Productos creados:\n";
+                                
+                                foreach (array_slice($createdProducts, 0, 10) as $product) {
+                                    $successMessage .= "• {$product['name']} (SKU: {$product['sku']}, Precio: $" . number_format($product['price'], 2) . ")\n";
+                                }
+                                
+                                if (count($createdProducts) > 10) {
+                                    $successMessage .= "... y " . (count($createdProducts) - 10) . " productos más.";
+                                }
+                                
+                                Notification::make()
+                                    ->title('Productos creados exitosamente')
+                                    ->body($successMessage)
+                                    ->success()
+                                    ->send();
+                            }
+                            
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Error al crear productos')
+                                ->body('Error: ' . $e->getMessage())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
+                    })
+                    ->tooltip('Crear nuevos productos importando desde un archivo Excel'),
+                    
+                // MOD-027 (main): Agregada acción para asignación masiva de marcas
+                Tables\Actions\Action::make('brand_assignment')
+                    ->label('Asignar Marcas Masivamente')
+                    ->icon('heroicon-o-tag')
+                    ->color('purple')
+                    ->form([
+                        Forms\Components\Select::make('category_id')
+                            ->label('Filtrar por Categoría (opcional)')
+                            ->options(Category::pluck('name', 'id'))
+                            ->searchable()
+                            ->placeholder('Todas las categorías')
+                            ->helperText('Filtra productos por categoría para trabajar con un grupo específico'),
+                        Forms\Components\Select::make('current_brand_id')
+                            ->label('Filtrar por Marca Actual (opcional)')
+                            ->options([
+                                'null' => 'Sin marca asignada',
+                                ...Brand::pluck('name', 'id')->toArray()
+                            ])
+                            ->searchable()
+                            ->placeholder('Todas las marcas')
+                            ->helperText('Filtra productos por su marca actual. Útil para cambiar productos sin marca o de una marca específica'),
+                    ])
+                    ->action(function (array $data) {
+                        $filename = 'asignacion_marcas_productos_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+                        
+                        return Excel::download(
+                            new ProductBrandAssignmentExport($data['category_id'] ?? null, $data['current_brand_id'] ?? null),
+                            $filename
+                        );
+                    })
+                    ->tooltip('Descarga un Excel con productos para asignar marcas masivamente. Luego usa "Importar Excel" para aplicar los cambios'),
             ]);
     }
 
