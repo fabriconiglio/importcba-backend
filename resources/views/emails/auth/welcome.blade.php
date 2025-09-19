@@ -20,7 +20,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #2563eb;
             color: white;
             padding: 30px;
             text-align: center;
@@ -74,7 +74,7 @@
         }
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #2563eb;
             color: white;
             padding: 15px 30px;
             text-decoration: none;

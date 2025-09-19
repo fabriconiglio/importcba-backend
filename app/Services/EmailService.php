@@ -35,29 +35,51 @@ class EmailService
                 ];
             }
 
-            Mail::to($order->user->email)
-                ->send(new OrderConfirmationMail($order));
-
-            Log::info('Email de confirmación de pedido enviado', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'user_email' => $order->user->email
+            // Usar directamente Brevo API (SMTP está bloqueado en producción)
+            $result = $this->brevoApi->sendEmail([
+                'to_email' => $order->user->email,
+                'to_name' => $order->user->name,
+                'subject' => 'Confirmación de Pedido #' . $order->order_number,
+                'html_content' => view('emails.orders.confirmation', [
+                    'order' => $order,
+                    'user' => $order->user,
+                    'items' => $order->items,
+                    'shippingAddress' => $order->shipping_address,
+                    'billingAddress' => $order->billing_address,
+                    'orderUrl' => config('app.frontend_url') . "/orders/{$order->id}",
+                    'supportEmail' => config('mail.from.address'),
+                    'companyName' => config('app.name'),
+                    'companyLogo' => config('app.url') . '/images/logo.png',
+                ])->render(),
+                'sender_email' => config('mail.from.address'),
+                'sender_name' => config('mail.from.name'),
             ]);
 
-            return [
-                'success' => true,
-                'message' => 'Email de confirmación enviado correctamente',
-                'data' => [
+            if ($result['success']) {
+                Log::info('Email de confirmación de pedido enviado via Brevo API', [
                     'order_id' => $order->id,
+                    'order_number' => $order->order_number,
                     'user_email' => $order->user->email
-                ]
-            ];
+                ]);
+
+                return [
+                    'success' => true,
+                    'message' => 'Email de confirmación enviado correctamente',
+                    'data' => [
+                        'order_id' => $order->id,
+                        'user_email' => $order->user->email,
+                        'method' => 'brevo_api'
+                    ]
+                ];
+            } else {
+                throw new \Exception($result['message']);
+            }
 
         } catch (\Exception $e) {
-            Log::error('Error al enviar email de confirmación de pedido: ' . $e->getMessage(), [
+            Log::error('Error al enviar email de confirmación de pedido via Brevo API: ' . $e->getMessage(), [
                 'order_id' => $order->id,
                 'user_email' => $order->user?->email,
-                'exception' => $e
+                'api_error' => $e->getMessage()
             ]);
 
             return [
@@ -133,28 +155,51 @@ class EmailService
     public function sendWelcome(User $user): array
     {
         try {
-            Mail::to($user->email)
-                ->send(new WelcomeMail($user));
-
-            Log::info('Email de bienvenida enviado', [
-                'user_id' => $user->id,
-                'user_email' => $user->email
+            // Usar directamente Brevo API (SMTP está bloqueado en producción)
+            $result = $this->brevoApi->sendEmail([
+                'to_email' => $user->email,
+                'to_name' => $user->name,
+                'subject' => '¡Bienvenido a ' . config('app.name') . '!',
+                'html_content' => view('emails.auth.welcome', [
+                    'user' => $user,
+                    'loginUrl' => config('app.frontend_url') . '/login',
+                    'catalogUrl' => config('app.frontend_url') . '/catalog',
+                    'supportEmail' => config('mail.from.address'),
+                    'companyName' => config('app.name'),
+                    'companyLogo' => config('app.url') . '/images/logo.png',
+                    'socialLinks' => [
+                        'instagram' => config('app.social.instagram', '#'),
+                        'twitter' => config('app.social.twitter', '#'),
+                    ],
+                ])->render(),
+                'sender_email' => config('mail.from.address'),
+                'sender_name' => config('mail.from.name'),
             ]);
 
-            return [
-                'success' => true,
-                'message' => 'Email de bienvenida enviado correctamente',
-                'data' => [
+            if ($result['success']) {
+                Log::info('Email de bienvenida enviado via Brevo API', [
                     'user_id' => $user->id,
                     'user_email' => $user->email
-                ]
-            ];
+                ]);
+
+                return [
+                    'success' => true,
+                    'message' => 'Email de bienvenida enviado correctamente',
+                    'data' => [
+                        'user_id' => $user->id,
+                        'user_email' => $user->email,
+                        'method' => 'brevo_api'
+                    ]
+                ];
+            } else {
+                throw new \Exception($result['message']);
+            }
 
         } catch (\Exception $e) {
-            Log::error('Error al enviar email de bienvenida: ' . $e->getMessage(), [
+            Log::error('Error al enviar email de bienvenida via Brevo API: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'user_email' => $user->email,
-                'exception' => $e
+                'api_error' => $e->getMessage()
             ]);
 
             return [
@@ -165,129 +210,14 @@ class EmailService
     }
 
     /**
-     * Enviar email de confirmación de pedido en cola
+     * Enviar email de confirmación de pedido (usa directamente API, más rápido que cola)
      */
     public function queueOrderConfirmation(Order $order): array
     {
-        try {
-            // Cargar relaciones necesarias
-            $order->load(['user', 'items']);
-
-            if (!$order->user) {
-                return [
-                    'success' => false,
-                    'message' => 'Usuario no encontrado para el pedido'
-                ];
-            }
-
-            Mail::to($order->user->email)
-                ->queue(new OrderConfirmationMail($order));
-
-            Log::info('Email de confirmación de pedido encolado', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'user_email' => $order->user->email
-            ]);
-
-            return [
-                'success' => true,
-                'message' => 'Email de confirmación encolado correctamente',
-                'data' => [
-                    'order_id' => $order->id,
-                    'user_email' => $order->user->email,
-                    'queued' => true
-                ]
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('Error al encolar email de confirmación de pedido: ' . $e->getMessage(), [
-                'order_id' => $order->id,
-                'user_email' => $order->user?->email,
-                'exception' => $e
-            ]);
-
-            return [
-                'success' => false,
-                'message' => 'Error al encolar email de confirmación: ' . $e->getMessage()
-            ];
-        }
+        // Usar directamente el método sendOrderConfirmation con API de Brevo
+        return $this->sendOrderConfirmation($order);
     }
 
-    /**
-     * Enviar email de recuperación de contraseña en cola
-     */
-    public function queuePasswordReset(User $user, string $token): array
-    {
-        try {
-            Mail::to($user->email)
-                ->queue(new PasswordResetMail($user, $token));
-
-            Log::info('Email de recuperación de contraseña encolado', [
-                'user_id' => $user->id,
-                'user_email' => $user->email
-            ]);
-
-            return [
-                'success' => true,
-                'message' => 'Email de recuperación encolado correctamente',
-                'data' => [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'queued' => true
-                ]
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('Error al encolar email de recuperación de contraseña: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'exception' => $e
-            ]);
-
-            return [
-                'success' => false,
-                'message' => 'Error al encolar email de recuperación: ' . $e->getMessage()
-            ];
-        }
-    }
-
-    /**
-     * Enviar email de bienvenida en cola
-     */
-    public function queueWelcome(User $user): array
-    {
-        try {
-            Mail::to($user->email)
-                ->queue(new WelcomeMail($user));
-
-            Log::info('Email de bienvenida encolado', [
-                'user_id' => $user->id,
-                'user_email' => $user->email
-            ]);
-
-            return [
-                'success' => true,
-                'message' => 'Email de bienvenida encolado correctamente',
-                'data' => [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'queued' => true
-                ]
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('Error al encolar email de bienvenida: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'exception' => $e
-            ]);
-
-            return [
-                'success' => false,
-                'message' => 'Error al encolar email de bienvenida: ' . $e->getMessage()
-            ];
-        }
-    }
 
     /**
      * Verificar configuración de email
