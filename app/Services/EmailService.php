@@ -106,7 +106,7 @@ class EmailService
                     'to_email' => $user->email,
                     'to_name' => $user->name,
                     'subject' => 'Recuperar contraseña - ' . config('app.name'),
-                    'html_content' => view('emails.auth.reset-password', [
+                    'html_content' => view('emails.auth.password-reset', [
                         'user' => $user,
                         'token' => $token,
                         'resetUrl' => $resetUrl,
