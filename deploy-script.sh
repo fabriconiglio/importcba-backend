@@ -81,6 +81,10 @@ php artisan storage:link
 if [ -f $BACKUP_DIR/.env.backup.$TIMESTAMP ]; then
   cp $BACKUP_DIR/.env.backup.$TIMESTAMP .env
   echo "Restored .env from backup"
+  
+  # CRITICAL: Clear config cache again after restoring .env
+  echo "Clearing config cache after .env restore..."
+  php artisan config:clear
 fi
 
 # Clear caches
