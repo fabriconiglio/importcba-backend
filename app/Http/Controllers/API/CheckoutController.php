@@ -683,8 +683,7 @@ class CheckoutController extends Controller
                 $cart->items()->delete();
                 $cart->delete();
 
-                // Enviar email de confirmación (en cola para no bloquear la respuesta)
-                $this->emailService->queueOrderConfirmation($order);
+                // El email se envía automáticamente via OrderObserver al crear el pedido
 
                 return response()->json([
                     'success' => true,

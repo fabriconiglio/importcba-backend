@@ -3,11 +3,54 @@
 namespace App\Observers;
 
 use App\Models\Order;
+use App\Services\EmailService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 class OrderObserver
 {
+    private EmailService $emailService;
+
+    public function __construct(EmailService $emailService)
+    {
+        $this->emailService = $emailService;
+    }
+
+    /**
+     * Handle the Order "created" event.
+     */
+    public function created(Order $order): void
+    {
+        // MOD-004 (main): Enviar email de confirmación cuando se crea un pedido
+        Log::info('Pedido creado, enviando email de confirmación', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'user_email' => $order->user?->email,
+            'status' => $order->status
+        ]);
+
+        try {
+            $result = $this->emailService->sendOrderConfirmation($order);
+            
+            if ($result['success']) {
+                Log::info('Email de confirmación enviado exitosamente', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number
+                ]);
+            } else {
+                Log::error('Error al enviar email de confirmación', [
+                    'order_id' => $order->id,
+                    'error' => $result['message']
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Excepción al enviar email de confirmación', [
+                'order_id' => $order->id,
+                'exception' => $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * Handle the Order "updated" event.
      */

@@ -101,6 +101,16 @@ Route::prefix('v1')->group(function () {
     Route::get('coupons/public', [CouponController::class, 'publicIndex']);
     
     // =============================================
+    // TESTING DE EMAILS (DESARROLLO)
+    // =============================================
+    Route::prefix('email-test')->group(function () {
+        Route::get('config', [App\Http\Controllers\API\EmailTestController::class, 'testConfig']);
+        Route::get('brevo', [App\Http\Controllers\API\EmailTestController::class, 'testBrevo']);
+        Route::post('send', [App\Http\Controllers\API\EmailTestController::class, 'sendTestEmail']);
+        Route::post('resend-order', [App\Http\Controllers\API\EmailTestController::class, 'resendOrderEmail']);
+    });
+    
+    // =============================================
     // DESCUENTOS POR VOLUMEN
     // =============================================
     Route::get('volume-discounts/tiers', [VolumeDiscountController::class, 'getTiers']);
