@@ -92,28 +92,29 @@ class ProductCreateTemplateExport implements FromArray, WithHeadings, WithStyles
 
     /**
      * Encabezados de las columnas
+     * MOD-028 (main): Cambiados a minúsculas para coincidir con el importador
      */
     public function headings(): array
     {
         return [
-            'NOMBRE (*)', // Campo obligatorio
-            'SKU', // Opcional - se genera automático si está vacío
-            'DESCRIPCIÓN',
-            'DESCRIPCIÓN CORTA',
-            'CATEGORÍA', // Debe existir en el sistema
-            'MARCA', // Debe existir en el sistema (opcional)
-            'PRECIO (*)', // Campo obligatorio
-            'PRECIO OFERTA',
-            'STOCK',
-            'STOCK MÍNIMO',
-            'META TÍTULO',
-            'META DESCRIPCIÓN',
-            'PESO (KG)',
-            'LARGO (CM)',
-            'ANCHO (CM)',
-            'ALTO (CM)',
-            'ACTIVO',
-            'DESTACADO'
+            'nombre', // Campo obligatorio
+            'sku', // Opcional - se genera automático si está vacío
+            'descripcion',
+            'descripcion_corta',
+            'categoria', // Debe existir en el sistema
+            'marca', // Debe existir en el sistema (opcional)
+            'precio', // Campo obligatorio
+            'precio_oferta',
+            'stock',
+            'stock_minimo',
+            'meta_titulo',
+            'meta_descripcion',
+            'peso_kg',
+            'largo_cm',
+            'ancho_cm',
+            'alto_cm',
+            'activo',
+            'destacado'
         ];
     }
 

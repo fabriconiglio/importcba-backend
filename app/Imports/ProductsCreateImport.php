@@ -8,13 +8,14 @@ use App\Models\Brand;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-// MOD-027 (main): Reescrito sistema de importación para crear productos - sin WithHeadingRow para evitar problemas
+// MOD-028 (main): Reescrito sistema de importación para crear productos - usando WithHeadingRow como el de actualización
 /** 
  * @phpstan-ignore-next-line 
  * @psalm-suppress UndefinedClass
  */
-class ProductsCreateImport implements ToCollection
+class ProductsCreateImport implements ToCollection, WithHeadingRow
 {
     protected $errors = [];
     protected $successCount = 0;
@@ -23,26 +24,13 @@ class ProductsCreateImport implements ToCollection
 
     /**
      * Procesar la colección de datos del Excel
-     * Sin WithHeadingRow - manejo manual de headers
+     * MOD-028 (main): Usando WithHeadingRow como el import de actualización que funciona
      */
     public function collection(Collection $rows)
     {
-        if ($rows->isEmpty()) {
-            $this->errors[] = "El archivo Excel está vacío";
-            return;
-        }
-
-        // Primera fila son los headers
-        $headers = $rows->first()->toArray();
-        $this->errors[] = "DEBUG - Headers encontrados: " . implode(', ', $headers);
-        
-        // Mapear posiciones de columnas
-        $columnMap = $this->mapColumns($headers);
-        
-        // Procesar filas de datos (omitir la primera que son headers)
-        foreach ($rows->skip(1) as $index => $row) {
+        foreach ($rows as $index => $row) {
             try {
-                $this->processRowManual($row->toArray(), $columnMap, $index + 2); // +2 porque la fila 1 son headers
+                $this->processRow($row, $index + 2); // +2 porque empezamos desde la fila 2 (después del header)
             } catch (\Exception $e) {
                 $this->errorCount++;
                 $this->errors[] = "Fila " . ($index + 2) . ": " . $e->getMessage();
@@ -50,86 +38,53 @@ class ProductsCreateImport implements ToCollection
         }
     }
 
-    /**
-     * Mapear headers a índices de columnas
-     */
-    protected function mapColumns(array $headers): array
-    {
-        $map = [];
-        foreach ($headers as $index => $header) {
-            $normalizedHeader = strtolower(trim($header));
-            $map[$normalizedHeader] = $index;
-        }
-        return $map;
-    }
 
     /**
      * Procesar una fila individual para crear un nuevo producto
-     * Método manual sin depender de WithHeadingRow
+     * MOD-028 (main): Adaptado del método que funciona en ProductsImport
      */
-    protected function processRowManual(array $rowData, array $columnMap, int $rowNumber)
+    protected function processRow($row, $rowNumber)
     {
-        // Helper para obtener valor de columna de forma segura
-        $getValue = function($columnName) use ($rowData, $columnMap) {
-            $normalizedName = strtolower(trim($columnName));
-            if (isset($columnMap[$normalizedName])) {
-                $index = $columnMap[$normalizedName];
-                return isset($rowData[$index]) ? $rowData[$index] : null;
-            }
-            return null;
-        };
-
-        // Debug de la fila actual
-        $this->errors[] = "DEBUG Fila {$rowNumber} - Procesando " . count($rowData) . " columnas";
-        
-        // Validar campos obligatorios
-        $nombre = $getValue('nombre');
-        $precio = $getValue('precio');
-        
-        if (empty($nombre)) {
+        // Validar campos obligatorios (igual que el import que funciona)
+        if (empty($row['nombre'])) {
             throw new \Exception("El nombre del producto es obligatorio");
         }
 
-        if (empty($precio)) {
-            throw new \Exception("El precio del producto es obligatorio");
+        if (empty($row['precio']) || $row['precio'] <= 0) {
+            throw new \Exception("El precio del producto es obligatorio y debe ser mayor a 0");
         }
 
-        // Obtener valores usando la función helper
-        $sku = $getValue('sku');
-        $descripcion = $getValue('descripcion');
-        $descripcion_corta = $getValue('descripcion_corta');
-        $categoria = $getValue('categoria');
-        $marca = $getValue('marca');
-        $precio_oferta = $getValue('precio_oferta');
-        $stock = $getValue('stock');
-        $stock_minimo = $getValue('stock_minimo');
-        $meta_titulo = $getValue('meta_titulo');
-        $meta_descripcion = $getValue('meta_descripcion');
-        $peso_kg = $getValue('peso_kg');
-        $largo_cm = $getValue('largo_cm');
-        $ancho_cm = $getValue('ancho_cm');
-        $alto_cm = $getValue('alto_cm');
-        $activo = $getValue('activo');
-        $destacado = $getValue('destacado');
-
         // Verificar que no exista un producto con el mismo SKU (si se proporciona)
-        if (!empty($sku)) {
-            $existingProduct = Product::where('sku', $sku)->first();
+        if (!empty($row['sku'])) {
+            $existingProduct = Product::where('sku', $row['sku'])->first();
             if ($existingProduct) {
-                throw new \Exception("Ya existe un producto con el SKU: {$sku}");
+                throw new \Exception("Ya existe un producto con el SKU: {$row['sku']}");
             }
         }
 
-        // Preparar datos para creación
+        // Preparar datos para creación (usando misma estructura que el que funciona)
         $productData = [];
 
-        // Campos obligatorios
-        $productData['name'] = trim($nombre);
-        $productData['price'] = floatval($precio);
+        // Campos directos (siguiendo patrón del import de actualización)
+        $directFields = [
+            'nombre' => 'name',
+            'descripcion' => 'description', 
+            'precio' => 'price',
+            'precio_oferta' => 'sale_price',
+            'stock' => 'stock_quantity',
+            'stock_minimo' => 'min_stock_level',
+            'meta_titulo' => 'meta_title'
+        ];
+
+        foreach ($directFields as $excelField => $dbField) {
+            if (isset($row[$excelField]) && $row[$excelField] !== null && $row[$excelField] !== '') {
+                $productData[$dbField] = $row[$excelField];
+            }
+        }
 
         // Generar SKU automático si no se proporciona
-        if (!empty($sku)) {
-            $productData['sku'] = trim($sku);
+        if (!empty($row['sku'])) {
+            $productData['sku'] = trim($row['sku']);
         } else {
             $productData['sku'] = $this->generateUniqueSku($productData['name']);
         }
@@ -137,81 +92,72 @@ class ProductsCreateImport implements ToCollection
         // Generar slug único
         $productData['slug'] = $this->generateUniqueSlug($productData['name']);
 
-        // Campos opcionales con valores por defecto
-        $productData['description'] = !empty($descripcion) ? trim($descripcion) : '';
-        $productData['short_description'] = !empty($descripcion_corta) ? trim($descripcion_corta) : '';
-        
-        // Precios
-        if (!empty($precio_oferta) && floatval($precio_oferta) > 0) {
-            $productData['sale_price'] = floatval($precio_oferta);
+        // Campos opcionales
+        $productData['short_description'] = $row['descripcion_corta'] ?? '';
+        $productData['meta_description'] = $row['meta_descripcion'] ?? Str::limit($productData['description'] ?? '', 150);
+
+        // Dimensiones y peso
+        if (!empty($row['peso_kg'])) {
+            $productData['weight'] = floatval($row['peso_kg']);
+        }
+        if (!empty($row['largo_cm'])) {
+            $productData['length'] = floatval($row['largo_cm']);
+        }
+        if (!empty($row['ancho_cm'])) {
+            $productData['width'] = floatval($row['ancho_cm']);
+        }
+        if (!empty($row['alto_cm'])) {
+            $productData['height'] = floatval($row['alto_cm']);
         }
 
-        // Stock
-        $productData['stock_quantity'] = !empty($stock) ? intval($stock) : 0;
-        $productData['min_stock_level'] = !empty($stock_minimo) ? intval($stock_minimo) : 0;
-
-        // SEO
-        $productData['meta_title'] = !empty($meta_titulo) ? trim($meta_titulo) : $productData['name'];
-        $productData['meta_description'] = !empty($meta_descripcion) ? trim($meta_descripcion) : Str::limit($productData['description'], 150);
-
-        // Manejar categoría
-        if (!empty($categoria)) {
-            $category = Category::where('name', 'ILIKE', '%' . trim($categoria) . '%')->first();
+        // Manejar categoría (igual que el import que funciona)
+        if (!empty($row['categoria'])) {
+            $category = Category::where('name', 'ILIKE', '%' . trim($row['categoria']) . '%')->first();
             if ($category) {
                 $productData['category_id'] = $category->id;
             } else {
-                throw new \Exception("Categoría '{$categoria}' no encontrada. Debe existir previamente en el sistema.");
-            }
-        } else {
-            // Buscar categoría por defecto o crear una genérica
-            $defaultCategory = Category::where('name', 'ILIKE', '%general%')->orWhere('name', 'ILIKE', '%sin categoria%')->first();
-            if ($defaultCategory) {
-                $productData['category_id'] = $defaultCategory->id;
-            } else {
-                throw new \Exception("No se especificó categoría y no existe una categoría por defecto. Agrega la columna 'categoria' o crea una categoría 'General'.");
+                throw new \Exception("Categoría '{$row['categoria']}' no encontrada");
             }
         }
 
-        // Manejar marca
-        if (!empty($marca)) {
-            $brand = Brand::where('name', 'ILIKE', '%' . trim($marca) . '%')->first();
+        // Manejar marca (igual que el import que funciona)
+        if (!empty($row['marca'])) {
+            $brand = Brand::where('name', 'ILIKE', '%' . trim($row['marca']) . '%')->first();
             if ($brand) {
                 $productData['brand_id'] = $brand->id;
             } else {
-                throw new \Exception("Marca '{$marca}' no encontrada. Debe existir previamente en el sistema.");
+                throw new \Exception("Marca '{$row['marca']}' no encontrada");
             }
         }
 
-        // Campos booleanos
+        // Manejar campos booleanos (igual que el import que funciona)
         $productData['is_active'] = true; // Por defecto activo
-        if (!empty($activo)) {
-            $productData['is_active'] = strtoupper(trim($activo)) === 'SI';
+        if (isset($row['activo'])) {
+            $productData['is_active'] = strtoupper(trim($row['activo'])) === 'SI';
         }
 
         $productData['is_featured'] = false; // Por defecto no destacado
-        if (!empty($destacado)) {
-            $productData['is_featured'] = strtoupper(trim($destacado)) === 'SI';
+        if (isset($row['destacado'])) {
+            $productData['is_featured'] = strtoupper(trim($row['destacado'])) === 'SI';
         }
 
-        // Peso y dimensiones (opcionales)
-        if (!empty($peso_kg)) {
-            $productData['weight'] = floatval($peso_kg);
+        // Validar precios (igual que el import que funciona)
+        if (isset($productData['price']) && $productData['price'] <= 0) {
+            throw new \Exception("El precio debe ser mayor a 0");
         }
 
-        if (!empty($largo_cm)) {
-            $productData['length'] = floatval($largo_cm);
+        if (isset($productData['sale_price']) && $productData['sale_price'] !== null && $productData['sale_price'] <= 0) {
+            throw new \Exception("El precio de oferta debe ser mayor a 0 o estar vacío");
         }
 
-        if (!empty($ancho_cm)) {
-            $productData['width'] = floatval($ancho_cm);
+        // Validar stock (igual que el import que funciona)
+        if (isset($productData['stock_quantity']) && $productData['stock_quantity'] < 0) {
+            throw new \Exception("El stock no puede ser negativo");
         }
 
-        if (!empty($alto_cm)) {
-            $productData['height'] = floatval($alto_cm);
+        if (isset($productData['min_stock_level']) && $productData['min_stock_level'] < 0) {
+            throw new \Exception("El stock mínimo no puede ser negativo");
         }
-
-        // Validaciones de negocio
-        $this->validateProductData($productData);
 
         // Crear el producto
         $product = Product::create($productData);
@@ -225,43 +171,6 @@ class ProductsCreateImport implements ToCollection
         ];
     }
 
-    /**
-     * Validar datos del producto antes de crear
-     */
-    protected function validateProductData(array $data)
-    {
-        // Validar precio
-        if ($data['price'] <= 0) {
-            throw new \Exception("El precio debe ser mayor a 0");
-        }
-
-        // Validar precio de oferta
-        if (isset($data['sale_price']) && $data['sale_price'] !== null) {
-            if ($data['sale_price'] <= 0) {
-                throw new \Exception("El precio de oferta debe ser mayor a 0 o estar vacío");
-            }
-            if ($data['sale_price'] >= $data['price']) {
-                throw new \Exception("El precio de oferta debe ser menor al precio regular");
-            }
-        }
-
-        // Validar stock
-        if ($data['stock_quantity'] < 0) {
-            throw new \Exception("El stock no puede ser negativo");
-        }
-
-        if ($data['min_stock_level'] < 0) {
-            throw new \Exception("El stock mínimo no puede ser negativo");
-        }
-
-        // Validar peso y dimensiones
-        $numericFields = ['weight', 'length', 'width', 'height'];
-        foreach ($numericFields as $field) {
-            if (isset($data[$field]) && $data[$field] < 0) {
-                throw new \Exception("El campo {$field} no puede ser negativo");
-            }
-        }
-    }
 
     /**
      * Generar SKU único basado en el nombre
