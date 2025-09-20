@@ -49,8 +49,19 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
     protected function processRow($row, $rowNumber)
     {
         // MOD-027 (main): Arreglado acceso a columnas específicas para productos nuevos
-        // Convertir $row a array para evitar problemas de acceso
-        $rowData = $row->toArray();
+        // Debug detallado para identificar el problema
+        try {
+            $rowData = $row->toArray();
+            $this->errors[] = "DEBUG Fila {$rowNumber} - Claves disponibles: " . implode(', ', array_keys($rowData));
+            
+            // Verificar si existe la clave 'id' accidentalmente
+            if (array_key_exists('id', $rowData)) {
+                $this->errors[] = "DEBUG Fila {$rowNumber} - ADVERTENCIA: Se encontró clave 'id' con valor: " . ($rowData['id'] ?? 'NULL');
+            }
+            
+        } catch (\Exception $e) {
+            throw new \Exception("Error convirtiendo fila a array: " . $e->getMessage());
+        }
         
         // Validar campos obligatorios
         if (empty($rowData['nombre'])) {
