@@ -8,14 +8,13 @@ use App\Models\Brand;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-// MOD-026 (main): Creado sistema de importación para crear nuevos productos desde Excel
+// MOD-027 (main): Reescrito sistema de importación para crear productos - sin WithHeadingRow para evitar problemas
 /** 
  * @phpstan-ignore-next-line 
  * @psalm-suppress UndefinedClass
  */
-class ProductsCreateImport implements ToCollection, WithHeadingRow
+class ProductsCreateImport implements ToCollection
 {
     protected $errors = [];
     protected $successCount = 0;
@@ -24,18 +23,26 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
 
     /**
      * Procesar la colección de datos del Excel
+     * Sin WithHeadingRow - manejo manual de headers
      */
     public function collection(Collection $rows)
     {
-        foreach ($rows as $index => $row) {
+        if ($rows->isEmpty()) {
+            $this->errors[] = "El archivo Excel está vacío";
+            return;
+        }
+
+        // Primera fila son los headers
+        $headers = $rows->first()->toArray();
+        $this->errors[] = "DEBUG - Headers encontrados: " . implode(', ', $headers);
+        
+        // Mapear posiciones de columnas
+        $columnMap = $this->mapColumns($headers);
+        
+        // Procesar filas de datos (omitir la primera que son headers)
+        foreach ($rows->skip(1) as $index => $row) {
             try {
-                // Debug: mostrar headers en la primera fila
-                if ($index === 0) {
-                    $headers = array_keys($row->toArray());
-                    $this->errors[] = "DEBUG - Headers encontrados: " . implode(', ', $headers);
-                }
-                
-                $this->processRow($row, $index + 2); // +2 porque empezamos desde la fila 2 (después del header)
+                $this->processRowManual($row->toArray(), $columnMap, $index + 2); // +2 porque la fila 1 son headers
             } catch (\Exception $e) {
                 $this->errorCount++;
                 $this->errors[] = "Fila " . ($index + 2) . ": " . $e->getMessage();
@@ -44,39 +51,72 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
     }
 
     /**
-     * Procesar una fila individual para crear un nuevo producto
+     * Mapear headers a índices de columnas
      */
-    protected function processRow($row, $rowNumber)
+    protected function mapColumns(array $headers): array
     {
-        // MOD-027 (main): Arreglado acceso a columnas específicas para productos nuevos
-        // Debug detallado para identificar el problema
-        try {
-            $rowData = $row->toArray();
-            $this->errors[] = "DEBUG Fila {$rowNumber} - Claves disponibles: " . implode(', ', array_keys($rowData));
-            
-            // Verificar si existe la clave 'id' accidentalmente
-            if (array_key_exists('id', $rowData)) {
-                $this->errors[] = "DEBUG Fila {$rowNumber} - ADVERTENCIA: Se encontró clave 'id' con valor: " . ($rowData['id'] ?? 'NULL');
-            }
-            
-        } catch (\Exception $e) {
-            throw new \Exception("Error convirtiendo fila a array: " . $e->getMessage());
+        $map = [];
+        foreach ($headers as $index => $header) {
+            $normalizedHeader = strtolower(trim($header));
+            $map[$normalizedHeader] = $index;
         }
+        return $map;
+    }
+
+    /**
+     * Procesar una fila individual para crear un nuevo producto
+     * Método manual sin depender de WithHeadingRow
+     */
+    protected function processRowManual(array $rowData, array $columnMap, int $rowNumber)
+    {
+        // Helper para obtener valor de columna de forma segura
+        $getValue = function($columnName) use ($rowData, $columnMap) {
+            $normalizedName = strtolower(trim($columnName));
+            if (isset($columnMap[$normalizedName])) {
+                $index = $columnMap[$normalizedName];
+                return isset($rowData[$index]) ? $rowData[$index] : null;
+            }
+            return null;
+        };
+
+        // Debug de la fila actual
+        $this->errors[] = "DEBUG Fila {$rowNumber} - Procesando " . count($rowData) . " columnas";
         
         // Validar campos obligatorios
-        if (empty($rowData['nombre'])) {
+        $nombre = $getValue('nombre');
+        $precio = $getValue('precio');
+        
+        if (empty($nombre)) {
             throw new \Exception("El nombre del producto es obligatorio");
         }
 
-        if (empty($rowData['precio'])) {
+        if (empty($precio)) {
             throw new \Exception("El precio del producto es obligatorio");
         }
 
+        // Obtener valores usando la función helper
+        $sku = $getValue('sku');
+        $descripcion = $getValue('descripcion');
+        $descripcion_corta = $getValue('descripcion_corta');
+        $categoria = $getValue('categoria');
+        $marca = $getValue('marca');
+        $precio_oferta = $getValue('precio_oferta');
+        $stock = $getValue('stock');
+        $stock_minimo = $getValue('stock_minimo');
+        $meta_titulo = $getValue('meta_titulo');
+        $meta_descripcion = $getValue('meta_descripcion');
+        $peso_kg = $getValue('peso_kg');
+        $largo_cm = $getValue('largo_cm');
+        $ancho_cm = $getValue('ancho_cm');
+        $alto_cm = $getValue('alto_cm');
+        $activo = $getValue('activo');
+        $destacado = $getValue('destacado');
+
         // Verificar que no exista un producto con el mismo SKU (si se proporciona)
-        if (!empty($rowData['sku'])) {
-            $existingProduct = Product::where('sku', $rowData['sku'])->first();
+        if (!empty($sku)) {
+            $existingProduct = Product::where('sku', $sku)->first();
             if ($existingProduct) {
-                throw new \Exception("Ya existe un producto con el SKU: {$rowData['sku']}");
+                throw new \Exception("Ya existe un producto con el SKU: {$sku}");
             }
         }
 
@@ -84,12 +124,12 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
         $productData = [];
 
         // Campos obligatorios
-        $productData['name'] = trim($rowData['nombre']);
-        $productData['price'] = floatval($rowData['precio']);
+        $productData['name'] = trim($nombre);
+        $productData['price'] = floatval($precio);
 
         // Generar SKU automático si no se proporciona
-        if (!empty($rowData['sku'])) {
-            $productData['sku'] = trim($rowData['sku']);
+        if (!empty($sku)) {
+            $productData['sku'] = trim($sku);
         } else {
             $productData['sku'] = $this->generateUniqueSku($productData['name']);
         }
@@ -98,29 +138,29 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
         $productData['slug'] = $this->generateUniqueSlug($productData['name']);
 
         // Campos opcionales con valores por defecto
-        $productData['description'] = !empty($rowData['descripcion']) ? trim($rowData['descripcion']) : '';
-        $productData['short_description'] = !empty($rowData['descripcion_corta']) ? trim($rowData['descripcion_corta']) : '';
+        $productData['description'] = !empty($descripcion) ? trim($descripcion) : '';
+        $productData['short_description'] = !empty($descripcion_corta) ? trim($descripcion_corta) : '';
         
         // Precios
-        if (!empty($rowData['precio_oferta']) && floatval($rowData['precio_oferta']) > 0) {
-            $productData['sale_price'] = floatval($rowData['precio_oferta']);
+        if (!empty($precio_oferta) && floatval($precio_oferta) > 0) {
+            $productData['sale_price'] = floatval($precio_oferta);
         }
 
         // Stock
-        $productData['stock_quantity'] = !empty($rowData['stock']) ? intval($rowData['stock']) : 0;
-        $productData['min_stock_level'] = !empty($rowData['stock_minimo']) ? intval($rowData['stock_minimo']) : 0;
+        $productData['stock_quantity'] = !empty($stock) ? intval($stock) : 0;
+        $productData['min_stock_level'] = !empty($stock_minimo) ? intval($stock_minimo) : 0;
 
         // SEO
-        $productData['meta_title'] = !empty($rowData['meta_titulo']) ? trim($rowData['meta_titulo']) : $productData['name'];
-        $productData['meta_description'] = !empty($rowData['meta_descripcion']) ? trim($rowData['meta_descripcion']) : Str::limit($productData['description'], 150);
+        $productData['meta_title'] = !empty($meta_titulo) ? trim($meta_titulo) : $productData['name'];
+        $productData['meta_description'] = !empty($meta_descripcion) ? trim($meta_descripcion) : Str::limit($productData['description'], 150);
 
         // Manejar categoría
-        if (!empty($rowData['categoria'])) {
-            $category = Category::where('name', 'ILIKE', '%' . trim($rowData['categoria']) . '%')->first();
+        if (!empty($categoria)) {
+            $category = Category::where('name', 'ILIKE', '%' . trim($categoria) . '%')->first();
             if ($category) {
                 $productData['category_id'] = $category->id;
             } else {
-                throw new \Exception("Categoría '{$rowData['categoria']}' no encontrada. Debe existir previamente en el sistema.");
+                throw new \Exception("Categoría '{$categoria}' no encontrada. Debe existir previamente en el sistema.");
             }
         } else {
             // Buscar categoría por defecto o crear una genérica
@@ -133,41 +173,41 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
         }
 
         // Manejar marca
-        if (!empty($rowData['marca'])) {
-            $brand = Brand::where('name', 'ILIKE', '%' . trim($rowData['marca']) . '%')->first();
+        if (!empty($marca)) {
+            $brand = Brand::where('name', 'ILIKE', '%' . trim($marca) . '%')->first();
             if ($brand) {
                 $productData['brand_id'] = $brand->id;
             } else {
-                throw new \Exception("Marca '{$rowData['marca']}' no encontrada. Debe existir previamente en el sistema.");
+                throw new \Exception("Marca '{$marca}' no encontrada. Debe existir previamente en el sistema.");
             }
         }
 
         // Campos booleanos
         $productData['is_active'] = true; // Por defecto activo
-        if (isset($rowData['activo'])) {
-            $productData['is_active'] = strtoupper(trim($rowData['activo'])) === 'SI';
+        if (!empty($activo)) {
+            $productData['is_active'] = strtoupper(trim($activo)) === 'SI';
         }
 
         $productData['is_featured'] = false; // Por defecto no destacado
-        if (isset($rowData['destacado'])) {
-            $productData['is_featured'] = strtoupper(trim($rowData['destacado'])) === 'SI';
+        if (!empty($destacado)) {
+            $productData['is_featured'] = strtoupper(trim($destacado)) === 'SI';
         }
 
         // Peso y dimensiones (opcionales)
-        if (!empty($rowData['peso_kg'])) {
-            $productData['weight'] = floatval($rowData['peso_kg']);
+        if (!empty($peso_kg)) {
+            $productData['weight'] = floatval($peso_kg);
         }
 
-        if (!empty($rowData['largo_cm'])) {
-            $productData['length'] = floatval($rowData['largo_cm']);
+        if (!empty($largo_cm)) {
+            $productData['length'] = floatval($largo_cm);
         }
 
-        if (!empty($rowData['ancho_cm'])) {
-            $productData['width'] = floatval($rowData['ancho_cm']);
+        if (!empty($ancho_cm)) {
+            $productData['width'] = floatval($ancho_cm);
         }
 
-        if (!empty($rowData['alto_cm'])) {
-            $productData['height'] = floatval($rowData['alto_cm']);
+        if (!empty($alto_cm)) {
+            $productData['height'] = floatval($alto_cm);
         }
 
         // Validaciones de negocio
