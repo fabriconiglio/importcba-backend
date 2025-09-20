@@ -48,20 +48,24 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
      */
     protected function processRow($row, $rowNumber)
     {
+        // MOD-027 (main): Arreglado acceso a columnas específicas para productos nuevos
+        // Convertir $row a array para evitar problemas de acceso
+        $rowData = $row->toArray();
+        
         // Validar campos obligatorios
-        if (empty($row['nombre'])) {
+        if (empty($rowData['nombre'])) {
             throw new \Exception("El nombre del producto es obligatorio");
         }
 
-        if (empty($row['precio'])) {
+        if (empty($rowData['precio'])) {
             throw new \Exception("El precio del producto es obligatorio");
         }
 
         // Verificar que no exista un producto con el mismo SKU (si se proporciona)
-        if (!empty($row['sku'])) {
-            $existingProduct = Product::where('sku', $row['sku'])->first();
+        if (!empty($rowData['sku'])) {
+            $existingProduct = Product::where('sku', $rowData['sku'])->first();
             if ($existingProduct) {
-                throw new \Exception("Ya existe un producto con el SKU: {$row['sku']}");
+                throw new \Exception("Ya existe un producto con el SKU: {$rowData['sku']}");
             }
         }
 
@@ -69,12 +73,12 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
         $productData = [];
 
         // Campos obligatorios
-        $productData['name'] = trim($row['nombre']);
-        $productData['price'] = floatval($row['precio']);
+        $productData['name'] = trim($rowData['nombre']);
+        $productData['price'] = floatval($rowData['precio']);
 
         // Generar SKU automático si no se proporciona
-        if (!empty($row['sku'])) {
-            $productData['sku'] = trim($row['sku']);
+        if (!empty($rowData['sku'])) {
+            $productData['sku'] = trim($rowData['sku']);
         } else {
             $productData['sku'] = $this->generateUniqueSku($productData['name']);
         }
@@ -83,29 +87,29 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
         $productData['slug'] = $this->generateUniqueSlug($productData['name']);
 
         // Campos opcionales con valores por defecto
-        $productData['description'] = !empty($row['descripcion']) ? trim($row['descripcion']) : '';
-        $productData['short_description'] = !empty($row['descripcion_corta']) ? trim($row['descripcion_corta']) : '';
+        $productData['description'] = !empty($rowData['descripcion']) ? trim($rowData['descripcion']) : '';
+        $productData['short_description'] = !empty($rowData['descripcion_corta']) ? trim($rowData['descripcion_corta']) : '';
         
         // Precios
-        if (!empty($row['precio_oferta']) && floatval($row['precio_oferta']) > 0) {
-            $productData['sale_price'] = floatval($row['precio_oferta']);
+        if (!empty($rowData['precio_oferta']) && floatval($rowData['precio_oferta']) > 0) {
+            $productData['sale_price'] = floatval($rowData['precio_oferta']);
         }
 
         // Stock
-        $productData['stock_quantity'] = !empty($row['stock']) ? intval($row['stock']) : 0;
-        $productData['min_stock_level'] = !empty($row['stock_minimo']) ? intval($row['stock_minimo']) : 0;
+        $productData['stock_quantity'] = !empty($rowData['stock']) ? intval($rowData['stock']) : 0;
+        $productData['min_stock_level'] = !empty($rowData['stock_minimo']) ? intval($rowData['stock_minimo']) : 0;
 
         // SEO
-        $productData['meta_title'] = !empty($row['meta_titulo']) ? trim($row['meta_titulo']) : $productData['name'];
-        $productData['meta_description'] = !empty($row['meta_descripcion']) ? trim($row['meta_descripcion']) : Str::limit($productData['description'], 150);
+        $productData['meta_title'] = !empty($rowData['meta_titulo']) ? trim($rowData['meta_titulo']) : $productData['name'];
+        $productData['meta_description'] = !empty($rowData['meta_descripcion']) ? trim($rowData['meta_descripcion']) : Str::limit($productData['description'], 150);
 
         // Manejar categoría
-        if (!empty($row['categoria'])) {
-            $category = Category::where('name', 'ILIKE', '%' . trim($row['categoria']) . '%')->first();
+        if (!empty($rowData['categoria'])) {
+            $category = Category::where('name', 'ILIKE', '%' . trim($rowData['categoria']) . '%')->first();
             if ($category) {
                 $productData['category_id'] = $category->id;
             } else {
-                throw new \Exception("Categoría '{$row['categoria']}' no encontrada. Debe existir previamente en el sistema.");
+                throw new \Exception("Categoría '{$rowData['categoria']}' no encontrada. Debe existir previamente en el sistema.");
             }
         } else {
             // Buscar categoría por defecto o crear una genérica
@@ -118,41 +122,41 @@ class ProductsCreateImport implements ToCollection, WithHeadingRow
         }
 
         // Manejar marca
-        if (!empty($row['marca'])) {
-            $brand = Brand::where('name', 'ILIKE', '%' . trim($row['marca']) . '%')->first();
+        if (!empty($rowData['marca'])) {
+            $brand = Brand::where('name', 'ILIKE', '%' . trim($rowData['marca']) . '%')->first();
             if ($brand) {
                 $productData['brand_id'] = $brand->id;
             } else {
-                throw new \Exception("Marca '{$row['marca']}' no encontrada. Debe existir previamente en el sistema.");
+                throw new \Exception("Marca '{$rowData['marca']}' no encontrada. Debe existir previamente en el sistema.");
             }
         }
 
         // Campos booleanos
         $productData['is_active'] = true; // Por defecto activo
-        if (isset($row['activo'])) {
-            $productData['is_active'] = strtoupper(trim($row['activo'])) === 'SI';
+        if (isset($rowData['activo'])) {
+            $productData['is_active'] = strtoupper(trim($rowData['activo'])) === 'SI';
         }
 
         $productData['is_featured'] = false; // Por defecto no destacado
-        if (isset($row['destacado'])) {
-            $productData['is_featured'] = strtoupper(trim($row['destacado'])) === 'SI';
+        if (isset($rowData['destacado'])) {
+            $productData['is_featured'] = strtoupper(trim($rowData['destacado'])) === 'SI';
         }
 
         // Peso y dimensiones (opcionales)
-        if (!empty($row['peso'])) {
-            $productData['weight'] = floatval($row['peso']);
+        if (!empty($rowData['peso_kg'])) {
+            $productData['weight'] = floatval($rowData['peso_kg']);
         }
 
-        if (!empty($row['largo'])) {
-            $productData['length'] = floatval($row['largo']);
+        if (!empty($rowData['largo_cm'])) {
+            $productData['length'] = floatval($rowData['largo_cm']);
         }
 
-        if (!empty($row['ancho'])) {
-            $productData['width'] = floatval($row['ancho']);
+        if (!empty($rowData['ancho_cm'])) {
+            $productData['width'] = floatval($rowData['ancho_cm']);
         }
 
-        if (!empty($row['alto'])) {
-            $productData['height'] = floatval($row['alto']);
+        if (!empty($rowData['alto_cm'])) {
+            $productData['height'] = floatval($rowData['alto_cm']);
         }
 
         // Validaciones de negocio
