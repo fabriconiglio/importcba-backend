@@ -312,7 +312,7 @@ class ProductResource extends Resource
             ->headerActions([
                 // MOD-003 (main): Agregadas acciones de exportación e importación masiva de productos
                 Tables\Actions\Action::make('export')
-                    ->label('Exportar Excel')
+                    ->label('Exportar Excel Productos existentes')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
                     ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
