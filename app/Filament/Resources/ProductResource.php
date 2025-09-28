@@ -16,7 +16,6 @@ use App\Filament\Resources\ProductResource\RelationManagers\ImagesRelationManage
 use App\Filament\Resources\ProductResource\RelationManagers\ProductAttributesRelationManager;
 use App\Exports\ProductsExport;
 use App\Exports\ProductCreateTemplateExport;
-use App\Exports\ProductBrandAssignmentExport;
 use App\Imports\ProductsImport;
 use App\Imports\ProductsCreateImport;
 use App\Models\Category;
@@ -291,7 +290,7 @@ class ProductResource extends Resource
                     }),
                     
                 Tables\Actions\Action::make('import')
-                    ->label('Importar Excel')
+                    ->label('Importar Excel de Productos Actualizado')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('primary')
                     ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
@@ -379,7 +378,7 @@ class ProductResource extends Resource
                 Tables\Actions\Action::make('import_create')
                     ->label('Crear Productos desde Excel')
                     ->icon('heroicon-o-plus')
-                    ->color('warning')
+                    ->color('amber')
                     ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
                     ->form([
                         Forms\Components\FileUpload::make('file')
@@ -452,39 +451,6 @@ class ProductResource extends Resource
                         }
                     })
                     ->tooltip('Crear nuevos productos importando desde un archivo Excel'),
-                    
-                // MOD-027 (main): Agregada acción para asignación masiva de marcas
-                Tables\Actions\Action::make('brand_assignment')
-                    ->label('Asignar Marcas Masivamente')
-                    ->icon('heroicon-o-tag')
-                    ->color('purple')
-                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
-                    ->form([
-                        Forms\Components\Select::make('category_id')
-                            ->label('Filtrar por Categoría (opcional)')
-                            ->options(Category::pluck('name', 'id'))
-                            ->searchable()
-                            ->placeholder('Todas las categorías')
-                            ->helperText('Filtra productos por categoría para trabajar con un grupo específico'),
-                        Forms\Components\Select::make('current_brand_id')
-                            ->label('Filtrar por Marca Actual (opcional)')
-                            ->options([
-                                'null' => 'Sin marca asignada',
-                                ...Brand::pluck('name', 'id')->toArray()
-                            ])
-                            ->searchable()
-                            ->placeholder('Todas las marcas')
-                            ->helperText('Filtra productos por su marca actual. Útil para cambiar productos sin marca o de una marca específica'),
-                    ])
-                    ->action(function (array $data) {
-                        $filename = 'asignacion_marcas_productos_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
-                        
-                        return Excel::download(
-                            new ProductBrandAssignmentExport($data['category_id'] ?? null, $data['current_brand_id'] ?? null),
-                            $filename
-                        );
-                    })
-                    ->tooltip('Descarga un Excel con productos para asignar marcas masivamente. Luego usa "Importar Excel" para aplicar los cambios'),
             ]);
     }
 

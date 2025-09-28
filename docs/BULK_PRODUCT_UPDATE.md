@@ -86,13 +86,6 @@ El sistema mostrará una notificación con:
 2. Cambia la columna "Activo" a "SI" o "NO"
 3. Importa el archivo
 
-### Asignar Marcas Masivamente
-1. Haz clic en **"Asignar Marcas Masivamente"** (botón púrpura)
-2. Opcional: filtra por categoría o marca actual
-3. Descarga el Excel con productos y sus marcas actuales
-4. Completa la columna "NUEVA MARCA" con el nombre exacto de la marca
-5. Usa **"Importar Excel"** para aplicar los cambios
-
 ## Errores Comunes y Soluciones
 
 ### Error: "Producto no encontrado"
