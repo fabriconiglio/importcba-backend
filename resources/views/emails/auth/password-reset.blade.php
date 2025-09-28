@@ -75,7 +75,7 @@
         .social-links a {
             display: inline-block;
             margin: 0 10px;
-            color: #667eea;
+            color: #2563eb;
             text-decoration: none;
         }
         .token-info {

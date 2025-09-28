@@ -4,8 +4,10 @@ namespace App\Observers;
 
 use App\Models\Order;
 use App\Services\EmailService;
+use App\Mail\NewOrderAdminNotificationMail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class OrderObserver
 {
@@ -30,6 +32,7 @@ class OrderObserver
         ]);
 
         try {
+            // Enviar email de confirmación al cliente
             $result = $this->emailService->sendOrderConfirmation($order);
             
             if ($result['success']) {
@@ -46,6 +49,26 @@ class OrderObserver
         } catch (\Exception $e) {
             Log::error('Excepción al enviar email de confirmación', [
                 'order_id' => $order->id,
+                'exception' => $e->getMessage()
+            ]);
+        }
+
+        // MOD-029 (main): Enviar notificación al administrador sobre nuevo pedido
+        try {
+            $adminEmail = 'importcbamayorista@gmail.com';
+            
+            Mail::to($adminEmail)->send(new NewOrderAdminNotificationMail($order));
+            
+            Log::info('Notificación de nuevo pedido enviada al administrador', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'admin_email' => $adminEmail
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al enviar notificación al administrador', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'admin_email' => 'importcbamayorista@gmail.com',
                 'exception' => $e->getMessage()
             ]);
         }

@@ -6,18 +6,20 @@
     <title>Confirmación de Pedido #{{ $order->order_number }}</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #374151;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
         }
         .container {
             max-width: 600px;
             margin: 0 auto;
             background-color: #ffffff;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
         }
         .header {
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
@@ -27,8 +29,9 @@
         }
         .header h1 {
             margin: 0;
-            font-size: 24px;
-            font-weight: 300;
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
         }
         .content {
             padding: 30px;
@@ -61,7 +64,8 @@
             border-bottom: 1px solid #ddd;
         }
         .items-table th {
-            background-color: #f8f9fa;
+            background-color: #2563eb;
+            color: white;
             font-weight: 600;
         }
         .product-name {

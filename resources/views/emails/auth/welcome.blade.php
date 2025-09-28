@@ -48,7 +48,7 @@
             margin: 30px 0;
         }
         .features h3 {
-            color: #667eea;
+            color: #2563eb;
             margin-top: 0;
         }
         .feature-list {
@@ -114,7 +114,7 @@
         .social-links a {
             display: inline-block;
             margin: 0 10px;
-            color: #667eea;
+            color: #2563eb;
             text-decoration: none;
         }
         .help-section {
