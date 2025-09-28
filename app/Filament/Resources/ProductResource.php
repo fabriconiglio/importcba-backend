@@ -23,6 +23,7 @@ use App\Models\Brand;
 use Maatwebsite\Excel\Facades\Excel;
 use Filament\Notifications\Notification;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Database\Eloquent\Collection;
 
 class ProductResource extends Resource
 {
@@ -259,6 +260,53 @@ class ProductResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    
+                    // MOD-028 (main): Agregada acción masiva para asignar marcas a productos seleccionados
+                    Tables\Actions\BulkAction::make('assign_brand')
+                        ->label('Asignar Marca')
+                        ->icon('heroicon-o-tag')
+                        ->color('purple')
+                        ->form([
+                            Forms\Components\Select::make('brand_id')
+                                ->label('Marca a Asignar')
+                                ->options(Brand::pluck('name', 'id'))
+                                ->searchable()
+                                ->required()
+                                ->placeholder('Selecciona una marca')
+                                ->helperText('Se asignará esta marca a todos los productos seleccionados'),
+                        ])
+                        ->action(function (Collection $records, array $data) {
+                            $brandId = $data['brand_id'];
+                            $brand = Brand::find($brandId);
+                            
+                            if (!$brand) {
+                                Notification::make()
+                                    ->title('Error')
+                                    ->body('La marca seleccionada no existe')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            
+                            $updatedCount = 0;
+                            
+                            foreach ($records as $product) {
+                                $product->update(['brand_id' => $brandId]);
+                                $updatedCount++;
+                            }
+                            
+                            Notification::make()
+                                ->title('Marcas Asignadas')
+                                ->body("Se asignó la marca '{$brand->name}' a {$updatedCount} producto(s)")
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion()
+                        ->requiresConfirmation()
+                        ->modalHeading('Asignar Marca a Productos Seleccionados')
+                        ->modalDescription('Esta acción asignará la marca seleccionada a todos los productos que has seleccionado.')
+                        ->modalSubmitActionLabel('Asignar Marca')
+                        ->tooltip('Asigna una marca a todos los productos seleccionados'),
                 ]),
             ])
             ->headerActions([
@@ -378,8 +426,8 @@ class ProductResource extends Resource
                 Tables\Actions\Action::make('import_create')
                     ->label('Crear Productos desde Excel')
                     ->icon('heroicon-o-plus')
-                    ->color('amber')
-                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem;'])
+                    ->color('warning')
+                    ->extraAttributes(['style' => 'font-size: 0.75rem; padding: 0.25rem 0.5rem; background-color: #f59e0b !important;'])
                     ->form([
                         Forms\Components\FileUpload::make('file')
                             ->label('Archivo Excel para Nuevos Productos')
