@@ -307,6 +307,88 @@ class ProductResource extends Resource
                         ->modalDescription('Esta acción asignará la marca seleccionada a todos los productos que has seleccionado.')
                         ->modalSubmitActionLabel('Asignar Marca')
                         ->tooltip('Asigna una marca a todos los productos seleccionados'),
+                    
+                    // MOD-030 (main): Agregada acción masiva para cambiar categorías de productos
+                    Tables\Actions\BulkAction::make('change_category')
+                        ->label('Cambiar Categoría')
+                        ->icon('heroicon-o-squares-2x2')
+                        ->color('indigo')
+                        ->form([
+                            Forms\Components\Select::make('parent_category_id')
+                                ->label('Categoría Padre')
+                                ->options(Category::whereNull('parent_id')->pluck('name', 'id'))
+                                ->searchable()
+                                ->required()
+                                ->placeholder('Selecciona una categoría padre')
+                                ->helperText('Selecciona la categoría principal para los productos')
+                                ->live()
+                                ->afterStateUpdated(function (callable $set) {
+                                    $set('subcategory_id', null);
+                                }),
+                            Forms\Components\Select::make('subcategory_id')
+                                ->label('Subcategoría (Opcional)')
+                                ->options(function (callable $get) {
+                                    $parentId = $get('parent_category_id');
+                                    if (!$parentId) {
+                                        return [];
+                                    }
+                                    return Category::where('parent_id', $parentId)->pluck('name', 'id');
+                                })
+                                ->searchable()
+                                ->placeholder('Selecciona una subcategoría (opcional)')
+                                ->helperText('Si no seleccionas subcategoría, los productos se asignarán solo a la categoría padre'),
+                        ])
+                        ->action(function (Collection $records, array $data) {
+                            $parentCategoryId = $data['parent_category_id'];
+                            $subcategoryId = $data['subcategory_id'] ?? null;
+                            
+                            // Determinar qué categoría asignar
+                            $categoryToAssign = $subcategoryId ?: $parentCategoryId;
+                            
+                            $parentCategory = Category::find($parentCategoryId);
+                            $subcategory = $subcategoryId ? Category::find($subcategoryId) : null;
+                            
+                            if (!$parentCategory) {
+                                Notification::make()
+                                    ->title('Error')
+                                    ->body('La categoría padre seleccionada no existe')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            
+                            if ($subcategoryId && !$subcategory) {
+                                Notification::make()
+                                    ->title('Error')
+                                    ->body('La subcategoría seleccionada no existe')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            
+                            $updatedCount = 0;
+                            
+                            foreach ($records as $product) {
+                                $product->update(['category_id' => $categoryToAssign]);
+                                $updatedCount++;
+                            }
+                            
+                            $categoryName = $subcategory 
+                                ? "{$parentCategory->name} > {$subcategory->name}"
+                                : $parentCategory->name;
+                            
+                            Notification::make()
+                                ->title('Categorías Actualizadas')
+                                ->body("Se cambió la categoría a '{$categoryName}' en {$updatedCount} producto(s)")
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion()
+                        ->requiresConfirmation()
+                        ->modalHeading('Cambiar Categoría de Productos Seleccionados')
+                        ->modalDescription('Esta acción cambiará la categoría de todos los productos seleccionados. Puedes asignar solo la categoría padre o también una subcategoría específica.')
+                        ->modalSubmitActionLabel('Cambiar Categoría')
+                        ->tooltip('Cambia la categoría padre y opcionalmente la subcategoría de los productos seleccionados'),
                 ]),
             ])
             ->headerActions([
