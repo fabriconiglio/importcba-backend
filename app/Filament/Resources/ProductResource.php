@@ -224,56 +224,77 @@ class ProductResource extends Resource
                     ->multiple()
                     ->placeholder('Seleccionar categorías')
                     ->query(function (Builder $query, array $data): Builder {
-                        // MOD-029 (main): Filtro de categorías que incluye subcategorías automáticamente
-                        if (empty($data['value']) || !isset($data['value'])) {
+                        // MOD-030 (main): Filtro de categorías que incluye subcategorías automáticamente (versión mejorada)
+                        
+                        // Verificar que haya valores seleccionados
+                        if (!isset($data['value']) || empty($data['value'])) {
+                            Log::info('Category filter: No value provided, skipping filter');
                             return $query;
                         }
                         
+                        // Normalizar a array
                         $selectedCategoryIds = is_array($data['value']) ? $data['value'] : [$data['value']];
                         
-                        // Verificar que los IDs sean válidos
-                        if (empty($selectedCategoryIds) || !is_array($selectedCategoryIds)) {
+                        // Filtrar valores vacíos/null
+                        $selectedCategoryIds = array_filter($selectedCategoryIds, function($id) {
+                            return !empty($id);
+                        });
+                        
+                        if (empty($selectedCategoryIds)) {
+                            Log::info('Category filter: No valid IDs after filtering, skipping filter');
                             return $query;
                         }
                         
-                        // Obtener todas las subcategorías de las categorías seleccionadas
+                        Log::info('Category filter: Starting with selected IDs', [
+                            'selected_ids' => $selectedCategoryIds
+                        ]);
+                        
+                        // Inicializar con las categorías seleccionadas
                         $allCategoryIds = collect($selectedCategoryIds);
                         
+                        // Para cada categoría seleccionada, buscar sus descendientes
                         foreach ($selectedCategoryIds as $categoryId) {
-                            // Verificar que el ID no esté vacío
-                            if (empty($categoryId)) {
-                                continue;
-                            }
+                            // Obtener subcategorías directas (nivel 1)
+                            $level1Children = Category::where('parent_id', $categoryId)
+                                ->pluck('id')
+                                ->toArray();
                             
-                            // Buscar subcategorías directas
-                            $subcategories = Category::where('parent_id', $categoryId)->pluck('id');
-                            $allCategoryIds = $allCategoryIds->merge($subcategories);
+                            Log::info('Category filter: Level 1 children', [
+                                'parent_id' => $categoryId,
+                                'children' => $level1Children
+                            ]);
                             
-                            // Buscar subcategorías de segundo nivel (recursivo)
-                            foreach ($subcategories as $subId) {
-                                if (!empty($subId)) {
-                                    $subSubcategories = Category::where('parent_id', $subId)->pluck('id');
-                                    $allCategoryIds = $allCategoryIds->merge($subSubcategories);
+                            if (!empty($level1Children)) {
+                                $allCategoryIds = $allCategoryIds->merge($level1Children);
+                                
+                                // Obtener subcategorías de segundo nivel (nivel 2)
+                                foreach ($level1Children as $childId) {
+                                    $level2Children = Category::where('parent_id', $childId)
+                                        ->pluck('id')
+                                        ->toArray();
+                                    
+                                    if (!empty($level2Children)) {
+                                        Log::info('Category filter: Level 2 children', [
+                                            'parent_id' => $childId,
+                                            'children' => $level2Children
+                                        ]);
+                                        $allCategoryIds = $allCategoryIds->merge($level2Children);
+                                    }
                                 }
                             }
                         }
                         
-                        // Filtrar IDs vacíos y obtener valores únicos
-                        $finalCategoryIds = $allCategoryIds->filter()->unique()->values()->toArray();
+                        // Obtener array único y limpio
+                        $finalCategoryIds = $allCategoryIds->unique()->filter()->values()->toArray();
                         
-                        // Debug: Log para verificar qué categorías se están incluyendo
-                        Log::info('Category filter debug:', [
+                        Log::info('Category filter: Final IDs to filter by', [
                             'selected_ids' => $selectedCategoryIds,
                             'final_category_ids' => $finalCategoryIds,
-                            'query_will_filter_by' => $finalCategoryIds
+                            'total_categories' => count($finalCategoryIds)
                         ]);
                         
-                        // Solo aplicar el filtro si hay categorías válidas
-                        if (!empty($finalCategoryIds)) {
-                            return $query->whereIn('category_id', $finalCategoryIds);
-                        }
-                        
-                        return $query;
+                        // Aplicar el filtro
+                        return $query->whereIn('category_id', $finalCategoryIds);
                     }),
                     
                 Tables\Filters\SelectFilter::make('brand_id')
