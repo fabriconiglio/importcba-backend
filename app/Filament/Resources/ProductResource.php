@@ -221,7 +221,25 @@ class ProductResource extends Resource
                     ->searchable()
                     ->preload()
                     ->multiple()
-                    ->placeholder('Seleccionar categorías'),
+                    ->placeholder('Seleccionar categorías')
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (!$data['value']) {
+                            return $query;
+                        }
+                        
+                        // MOD-029 (main): Filtro de categorías que incluye subcategorías automáticamente
+                        $selectedCategoryIds = is_array($data['value']) ? $data['value'] : [$data['value']];
+                        
+                        // Obtener todas las subcategorías de las categorías seleccionadas
+                        $allCategoryIds = collect($selectedCategoryIds);
+                        
+                        foreach ($selectedCategoryIds as $categoryId) {
+                            $subcategories = Category::where('parent_id', $categoryId)->pluck('id');
+                            $allCategoryIds = $allCategoryIds->merge($subcategories);
+                        }
+                        
+                        return $query->whereIn('category_id', $allCategoryIds->unique());
+                    }),
                     
                 Tables\Filters\SelectFilter::make('brand_id')
                     ->label('Marca')
