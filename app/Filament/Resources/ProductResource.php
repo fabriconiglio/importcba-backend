@@ -223,11 +223,11 @@ class ProductResource extends Resource
                     ->multiple()
                     ->placeholder('Seleccionar categorías')
                     ->query(function (Builder $query, array $data): Builder {
-                        if (!$data['value']) {
+                        // MOD-029 (main): Filtro de categorías que incluye subcategorías automáticamente
+                        if (empty($data['value']) || !isset($data['value'])) {
                             return $query;
                         }
                         
-                        // MOD-029 (main): Filtro de categorías que incluye subcategorías automáticamente
                         $selectedCategoryIds = is_array($data['value']) ? $data['value'] : [$data['value']];
                         
                         // Obtener todas las subcategorías de las categorías seleccionadas
