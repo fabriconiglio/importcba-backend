@@ -24,6 +24,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Filament\Notifications\Notification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class ProductResource extends Resource
 {
@@ -230,15 +231,49 @@ class ProductResource extends Resource
                         
                         $selectedCategoryIds = is_array($data['value']) ? $data['value'] : [$data['value']];
                         
+                        // Verificar que los IDs sean válidos
+                        if (empty($selectedCategoryIds) || !is_array($selectedCategoryIds)) {
+                            return $query;
+                        }
+                        
                         // Obtener todas las subcategorías de las categorías seleccionadas
                         $allCategoryIds = collect($selectedCategoryIds);
                         
                         foreach ($selectedCategoryIds as $categoryId) {
+                            // Verificar que el ID no esté vacío
+                            if (empty($categoryId)) {
+                                continue;
+                            }
+                            
+                            // Buscar subcategorías directas
                             $subcategories = Category::where('parent_id', $categoryId)->pluck('id');
                             $allCategoryIds = $allCategoryIds->merge($subcategories);
+                            
+                            // Buscar subcategorías de segundo nivel (recursivo)
+                            foreach ($subcategories as $subId) {
+                                if (!empty($subId)) {
+                                    $subSubcategories = Category::where('parent_id', $subId)->pluck('id');
+                                    $allCategoryIds = $allCategoryIds->merge($subSubcategories);
+                                }
+                            }
                         }
                         
-                        return $query->whereIn('category_id', $allCategoryIds->unique());
+                        // Filtrar IDs vacíos y obtener valores únicos
+                        $finalCategoryIds = $allCategoryIds->filter()->unique()->values()->toArray();
+                        
+                        // Debug: Log para verificar qué categorías se están incluyendo
+                        Log::info('Category filter debug:', [
+                            'selected_ids' => $selectedCategoryIds,
+                            'final_category_ids' => $finalCategoryIds,
+                            'query_will_filter_by' => $finalCategoryIds
+                        ]);
+                        
+                        // Solo aplicar el filtro si hay categorías válidas
+                        if (!empty($finalCategoryIds)) {
+                            return $query->whereIn('category_id', $finalCategoryIds);
+                        }
+                        
+                        return $query;
                     }),
                     
                 Tables\Filters\SelectFilter::make('brand_id')
