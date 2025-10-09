@@ -24,7 +24,6 @@ use Maatwebsite\Excel\Facades\Excel;
 use Filament\Notifications\Notification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Log;
 
 class ProductResource extends Resource
 {
@@ -227,20 +226,13 @@ class ProductResource extends Resource
                             ->placeholder('Seleccionar categorías')
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        // MOD-031 (main): Filtro de categorías usando Filter::make para mejor compatibilidad
-                        
-                        Log::info('Category filter EXECUTED with data:', $data);
+                        // MOD-031 (main): Filtro de categorías que incluye subcategorías automáticamente
                         
                         if (empty($data['categories'])) {
-                            Log::info('Category filter: No categories selected');
                             return $query;
                         }
                         
                         $selectedCategoryIds = is_array($data['categories']) ? $data['categories'] : [$data['categories']];
-                        
-                        Log::info('Category filter: Selected category IDs', [
-                            'selected_ids' => $selectedCategoryIds
-                        ]);
                         
                         // Inicializar con las categorías seleccionadas
                         $allCategoryIds = collect($selectedCategoryIds);
@@ -252,11 +244,6 @@ class ProductResource extends Resource
                                 ->pluck('id')
                                 ->toArray();
                             
-                            Log::info('Category filter: Level 1 children', [
-                                'parent_id' => $categoryId,
-                                'children' => $level1Children
-                            ]);
-                            
                             if (!empty($level1Children)) {
                                 $allCategoryIds = $allCategoryIds->merge($level1Children);
                                 
@@ -267,10 +254,6 @@ class ProductResource extends Resource
                                         ->toArray();
                                     
                                     if (!empty($level2Children)) {
-                                        Log::info('Category filter: Level 2 children', [
-                                            'parent_id' => $childId,
-                                            'children' => $level2Children
-                                        ]);
                                         $allCategoryIds = $allCategoryIds->merge($level2Children);
                                     }
                                 }
@@ -279,12 +262,6 @@ class ProductResource extends Resource
                         
                         // Obtener array único y limpio
                         $finalCategoryIds = $allCategoryIds->unique()->filter()->values()->toArray();
-                        
-                        Log::info('Category filter: Final IDs to filter by', [
-                            'selected_ids' => $selectedCategoryIds,
-                            'final_category_ids' => $finalCategoryIds,
-                            'total_categories' => count($finalCategoryIds)
-                        ]);
                         
                         // Aplicar el filtro
                         return $query->whereIn('category_id', $finalCategoryIds);
