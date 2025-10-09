@@ -216,36 +216,29 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('category_id')
-                    ->label('Categoría')
-                    ->relationship('category', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->multiple()
-                    ->placeholder('Seleccionar categorías')
+                Tables\Filters\Filter::make('category_id')
+                    ->form([
+                        Forms\Components\Select::make('categories')
+                            ->label('Categorías')
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->options(Category::all()->pluck('name', 'id'))
+                            ->placeholder('Seleccionar categorías')
+                    ])
                     ->query(function (Builder $query, array $data): Builder {
-                        // MOD-030 (main): Filtro de categorías que incluye subcategorías automáticamente (versión mejorada)
+                        // MOD-031 (main): Filtro de categorías usando Filter::make para mejor compatibilidad
                         
-                        // Verificar que haya valores seleccionados
-                        if (!isset($data['value']) || empty($data['value'])) {
-                            Log::info('Category filter: No value provided, skipping filter');
+                        Log::info('Category filter EXECUTED with data:', $data);
+                        
+                        if (empty($data['categories'])) {
+                            Log::info('Category filter: No categories selected');
                             return $query;
                         }
                         
-                        // Normalizar a array
-                        $selectedCategoryIds = is_array($data['value']) ? $data['value'] : [$data['value']];
+                        $selectedCategoryIds = is_array($data['categories']) ? $data['categories'] : [$data['categories']];
                         
-                        // Filtrar valores vacíos/null
-                        $selectedCategoryIds = array_filter($selectedCategoryIds, function($id) {
-                            return !empty($id);
-                        });
-                        
-                        if (empty($selectedCategoryIds)) {
-                            Log::info('Category filter: No valid IDs after filtering, skipping filter');
-                            return $query;
-                        }
-                        
-                        Log::info('Category filter: Starting with selected IDs', [
+                        Log::info('Category filter: Selected category IDs', [
                             'selected_ids' => $selectedCategoryIds
                         ]);
                         
