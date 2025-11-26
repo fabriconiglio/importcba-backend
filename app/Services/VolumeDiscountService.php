@@ -13,24 +13,24 @@ class VolumeDiscountService
         $discountAmount = 0;
         $nextTier = null;
 
-        if ($subtotal >= 500000) {
+        if ($subtotal >= 700000) {
             $discountPercentage = 20;
             $discountAmount = ($subtotal * 20) / 100;
-        } elseif ($subtotal >= 400000) {
+        } elseif ($subtotal >= 500000) {
             $discountPercentage = 15;
             $discountAmount = ($subtotal * 15) / 100;
             $nextTier = [
-                'amount' => 500000,
+                'amount' => 700000,
                 'percentage' => 20,
-                'remaining' => 500000 - $subtotal
+                'remaining' => 700000 - $subtotal
             ];
         } elseif ($subtotal >= 300000) {
             $discountPercentage = 10;
             $discountAmount = ($subtotal * 10) / 100;
             $nextTier = [
-                'amount' => 400000,
+                'amount' => 500000,
                 'percentage' => 15,
-                'remaining' => 400000 - $subtotal
+                'remaining' => 500000 - $subtotal
             ];
         } else {
             $nextTier = [
@@ -62,14 +62,14 @@ class VolumeDiscountService
                 'description' => 'Superando $300.000'
             ],
             [
-                'min_amount' => 400000,
+                'min_amount' => 500000,
                 'percentage' => 15,
-                'description' => 'Superando $400.000'
+                'description' => 'Superando $500.000'
             ],
             [
-                'min_amount' => 500000,
+                'min_amount' => 700000,
                 'percentage' => 20,
-                'description' => 'Superando $500.000'
+                'description' => 'Superando $700.000'
             ]
         ];
     }
