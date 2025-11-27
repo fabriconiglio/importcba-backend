@@ -13,29 +13,37 @@ class VolumeDiscountService
         $discountAmount = 0;
         $nextTier = null;
 
-        if ($subtotal >= 700000) {
+        if ($subtotal >= 1000000) {
             $discountPercentage = 20;
             $discountAmount = ($subtotal * 20) / 100;
-        } elseif ($subtotal >= 500000) {
+        } elseif ($subtotal >= 700000) {
             $discountPercentage = 15;
             $discountAmount = ($subtotal * 15) / 100;
             $nextTier = [
-                'amount' => 700000,
+                'amount' => 1000000,
                 'percentage' => 20,
-                'remaining' => 700000 - $subtotal
+                'remaining' => 1000000 - $subtotal
             ];
-        } elseif ($subtotal >= 300000) {
+        } elseif ($subtotal >= 500000) {
             $discountPercentage = 10;
             $discountAmount = ($subtotal * 10) / 100;
             $nextTier = [
-                'amount' => 500000,
+                'amount' => 700000,
                 'percentage' => 15,
+                'remaining' => 700000 - $subtotal
+            ];
+        } elseif ($subtotal >= 300000) {
+            $discountPercentage = 5;
+            $discountAmount = ($subtotal * 5) / 100;
+            $nextTier = [
+                'amount' => 500000,
+                'percentage' => 10,
                 'remaining' => 500000 - $subtotal
             ];
         } else {
             $nextTier = [
                 'amount' => 300000,
-                'percentage' => 10,
+                'percentage' => 5,
                 'remaining' => 300000 - $subtotal
             ];
         }
@@ -58,18 +66,23 @@ class VolumeDiscountService
         return [
             [
                 'min_amount' => 300000,
-                'percentage' => 10,
+                'percentage' => 5,
                 'description' => 'Superando $300.000'
             ],
             [
                 'min_amount' => 500000,
-                'percentage' => 15,
+                'percentage' => 10,
                 'description' => 'Superando $500.000'
             ],
             [
                 'min_amount' => 700000,
-                'percentage' => 20,
+                'percentage' => 15,
                 'description' => 'Superando $700.000'
+            ],
+            [
+                'min_amount' => 1000000,
+                'percentage' => 20,
+                'description' => 'Superando $1.000.000'
             ]
         ];
     }

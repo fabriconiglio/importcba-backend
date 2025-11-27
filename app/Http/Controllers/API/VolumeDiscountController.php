@@ -35,7 +35,7 @@ class VolumeDiscountController extends Controller
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="array", @OA\Items(
      *                 @OA\Property(property="min_amount", type="number", example=300000),
-     *                 @OA\Property(property="percentage", type="integer", example=10),
+     *                 @OA\Property(property="percentage", type="integer", example=5),
      *                 @OA\Property(property="description", type="string", example="Superando $300.000")
      *             )),
      *             @OA\Property(property="message", type="string", example="Niveles de descuento obtenidos correctamente")
@@ -81,13 +81,13 @@ class VolumeDiscountController extends Controller
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="has_discount", type="boolean", example=true),
-     *                 @OA\Property(property="percentage", type="integer", example=10),
-     *                 @OA\Property(property="amount", type="number", example=35000),
+     *                 @OA\Property(property="percentage", type="integer", example=5),
+     *                 @OA\Property(property="amount", type="number", example=17500),
      *                 @OA\Property(property="subtotal", type="number", example=350000),
-     *                 @OA\Property(property="final_amount", type="number", example=315000),
+     *                 @OA\Property(property="final_amount", type="number", example=332500),
      *                 @OA\Property(property="next_tier", type="object",
      *                     @OA\Property(property="amount", type="number", example=500000),
-     *                     @OA\Property(property="percentage", type="integer", example=15),
+     *                     @OA\Property(property="percentage", type="integer", example=10),
      *                     @OA\Property(property="remaining", type="number", example=150000)
      *                 )
      *             ),
@@ -152,7 +152,7 @@ class VolumeDiscountController extends Controller
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="current_amount", type="number", example=250000),
      *                 @OA\Property(property="next_tier_amount", type="number", example=300000),
-     *                 @OA\Property(property="next_tier_percentage", type="integer", example=10),
+     *                 @OA\Property(property="next_tier_percentage", type="integer", example=5),
      *                 @OA\Property(property="remaining", type="number", example=50000),
      *                 @OA\Property(property="progress_percentage", type="number", example=83.33)
      *             ),
